@@ -47,6 +47,8 @@
   --app-gap-lg: 12px;
   --app-font: var(--vscode-font-family, "Inter", "Segoe UI Variable Text", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif);
   --app-mono: var(--vscode-editor-font-family, "Cascadia Code", "Fira Code", "JetBrains Mono", "Consolas", "Courier New", monospace);
+  --app-ui-scale: 1;
+  --app-base-font-size: var(--vscode-font-size, 13px);
 
   /* Component specific theme tokens for dark theme default */
   --app-code-bg: rgba(0, 0, 0, 0.35);
@@ -129,12 +131,15 @@ body.vscode-high-contrast-light {
 /* -----------------------------
    Global reset
 ------------------------------ */
-html,
-body {
+/* Root HTML element configured with IDE base font-size and fluid rem typography scaling */
+html {
+  font-size: calc(var(--app-base-font-size, 13px) * var(--app-ui-scale, 1));
   height: 100%;
 }
 
+/* Base extension body styling consuming root typography */
 body {
+  height: 100%;
   margin: 0;
   padding: 6px 4px;
   box-sizing: border-box;
@@ -144,6 +149,7 @@ body {
   background: var(--app-bg);
   color: var(--app-fg);
   font-family: var(--app-font);
+  font-size: 1rem;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -2041,12 +2047,13 @@ button:disabled {
 /* Custom Select trigger button styling */
 .custom-select-trigger {
   width: 100%;
-  height: 28px;
+  min-height: 1.85rem;
+  height: auto;
   box-sizing: border-box;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 10px;
+  padding: 4px 10px;
   background: var(--app-surface-strong);
   color: var(--app-fg);
   border: 0 !important;
