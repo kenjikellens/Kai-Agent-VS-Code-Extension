@@ -32,12 +32,20 @@ class CustomSelectComponent {
 
     /**
      * Updates fixed popup menu positioning based on trigger button bounding rectangle.
+     * Positions popup aligned with trigger button while respecting viewport boundaries.
      */
     updatePosition() {
         if (!this.isOpen || !this.triggerBtn || !this.menuEl) return;
         const rect = this.triggerBtn.getBoundingClientRect();
         this.menuEl.style.position = 'fixed';
-        this.menuEl.style.top = `${rect.bottom + 4}px`;
+        const spaceBelow = window.innerHeight - rect.bottom;
+        if (spaceBelow < 180 && rect.top > 180) {
+            this.menuEl.style.top = 'auto';
+            this.menuEl.style.bottom = `${window.innerHeight - rect.top + 4}px`;
+        } else {
+            this.menuEl.style.top = `${rect.bottom + 4}px`;
+            this.menuEl.style.bottom = 'auto';
+        }
         this.menuEl.style.left = `${rect.left}px`;
         this.menuEl.style.width = `${rect.width}px`;
         this.menuEl.style.zIndex = '99999';
