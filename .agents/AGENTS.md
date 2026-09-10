@@ -216,6 +216,17 @@ When implementing or modifying completions across providers, dynamically apply t
   - In expanded state (`.thinking-block:not(.collapsed)`), `.thinking-content` spans the full chat width (`width: 100%; max-width: 100%;`) with a bottom border (`border: 0; border-bottom: 1px solid var(--app-border-strong); border-radius: 0; background: transparent;`) and symmetric padding.
   - Collapsed state is managed on the parent `.thinking-block` element via `ThinkingBlockComponent.toggle(header)`.
 
+---
+
+## 19. Raw Mode Separation & Thinking Demarcation Contract
+
+- **Clean Monospace Separation**:
+  - The raw plaintext preview (`.toggle-raw-btn`) strictly separates reasoning traces (`<think>...</think>`) from the regular assistant response via `MarkdownFormatter.formatRawContent()`.
+  - Reasoning is enclosed within the unified `.thinking-block.raw-thinking-block` accordion component with `.thinking-header`, preserving the user's active collapsed state across raw mode toggling.
+  - The raw thinking block utilizes the `.raw-markdown-pre--thinking` modifier (`color: var(--app-muted)`, `border-left: 3px solid var(--app-accent, #38bdf8)`, max-height with internal scrolling).
+  - The regular assistant response is isolated within its own cleanly demarcated `.raw-markdown-pre--response` code block (`color: var(--app-fg)`).
+
+
 
 
 

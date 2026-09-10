@@ -92,6 +92,12 @@ Whenever architecture, UI components, runtime features, or system design guideli
     - When collapsed, it renders as a compact pill trigger (`background: transparent; max-width: fit-content; border: 0;`). When expanded, `.thinking-content` displays a bottom border (`border: 0; border-bottom: 1px solid var(--app-border-strong); border-radius: 0; background: transparent; max-width: min(85%, 680px);`) beneath the markdown body.
     - `ThinkingBlockComponent.toggle(header)` encapsulates collapsed state toggling and chevron rotation on the parent container.
 
+12. **Raw Mode Reasoning & Response Separation**:
+    - When switching to raw mode via `.toggle-raw-btn`, `MarkdownFormatter.formatRawContent()` parses reasoning traces (`<think>...</think>`) and separates them into a dedicated `.thinking-block.raw-thinking-block` accordion.
+    - Preserves the user's active collapsed state across raw mode toggles (`formatRawContent(rawText, wasCollapsed)`).
+    - The raw thinking block utilizes `.raw-markdown-pre--thinking` with muted text (`color: var(--app-muted)`), an accent border (`border-left: 3px solid var(--app-accent, #38bdf8)`), and a capped scrollable viewport (`max-height: 220px`). The regular response renders cleanly in `.raw-markdown-pre--response` (`color: var(--app-fg)`).
+
+
 
 
 

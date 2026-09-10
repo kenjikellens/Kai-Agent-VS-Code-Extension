@@ -3706,6 +3706,10 @@ details[open]>summary>.custom-chevron {
   background: var(--app-surface-hover);
 }
 
+/**
+ * Raw markdown source preview container.
+ * Consumed by: ChatUIController, MarkdownFormatter.
+ */
 .raw-markdown-pre {
   margin: 4px 0;
   padding: 8px 10px;
@@ -3717,6 +3721,30 @@ details[open]>summary>.custom-chevron {
   color: var(--app-fg);
   white-space: pre-wrap;
   word-break: break-all;
+}
+
+/* Modifier for raw reasoning/thinking pre block */
+.raw-markdown-pre--thinking {
+  color: var(--app-muted);
+  border: 1px solid var(--app-border-strong);
+  border-left: 3px solid var(--app-accent, #38bdf8);
+  font-size: 0.75rem;
+  margin: 0;
+  max-height: var(--app-thinking-max-height, 220px);
+  overflow-y: auto;
+}
+
+/* Modifier for raw assistant response pre block */
+.raw-markdown-pre--response {
+  margin-top: 6px;
+}
+
+/* Unconstrained container for raw thinking content to prevent nested double scrollbars */
+.thinking-content.raw-thinking-content {
+  padding: 0;
+  border: 0;
+  max-height: none;
+  overflow: visible;
 }
 
 /* ==========================================================================

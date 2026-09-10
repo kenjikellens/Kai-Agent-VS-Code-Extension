@@ -570,4 +570,68 @@ class MarkdownFormatter {
 
         return escaped;
     }
+
+    /**
+     * Formats raw response text into plaintext pre blocks, separating reasoning/thinking
+     * blocks (<think>...</think>) into a distinct, collapsible thinking accordion.
+     * @param {string} rawText The unformatted assistant response text.
+     * @param {boolean|null} [forceCollapsed=null] Whether the thinking block starts collapsed.
+     * @returns {string} HTML string containing the separated raw pre blocks.
+     */
+    formatRawContent(rawText, forceCollapsed = null) {
+        if (!rawText) return '';
+
+        const hasThinking = /<think>/i.test(rawText);
+        if (!hasThinking) {
+            return `<pre class="raw-markdown-pre"><code>${this.escapeHtml(rawText)}</code></pre>`;
+        }
+
+        const thinkRegex = /<think>([\s\S]*?)(?:<\/think>|$)/gi;
+        const thinkingParts = [];
+        let match;
+        while ((match = thinkRegex.exec(rawText)) !== null) {
+            const thought = match[1].trim();
+            if (thought) {
+                thinkingParts.push(thought);
+            }
+        }
+
+        const responseText = rawText
+            .replace(/<think>[\s\S]*?<\/think>[ \t]*(?:\r?\n)*/gi, '')
+            .replace(/<think>[\s\S]*$/gi, '')
+            .trim();
+
+        const i18n = (typeof window !== 'undefined' && window.KAI_I18N) ? window.KAI_I18N : {};
+        const thinkingProcessTitle = i18n.thinkingProcess || 'Thinking Process';
+        let keepThinkingFinishedExpanded = false;
+        try {
+            keepThinkingFinishedExpanded = localStorage.getItem('kai.keepThinkingFinishedExpanded') === 'true';
+        } catch (_) {}
+
+        const isCollapsed = forceCollapsed !== null ? forceCollapsed : !keepThinkingFinishedExpanded;
+        const activeChevron = isCollapsed 
+            ? DOMUtils.getChevronSvgString('thinking-chevron') 
+            : DOMUtils.getChevronUpSvgString('thinking-chevron');
+        const activeCollapsedClass = isCollapsed ? ' collapsed' : '';
+
+        let html = '';
+        if (thinkingParts.length > 0) {
+            const thinkingCombined = thinkingParts.join('\n\n');
+            html += `<div class="thinking-block raw-thinking-block${activeCollapsedClass}">`
+                  + `<button type="button" class="thinking-header">`
+                  + `<span class="thinking-title">${thinkingProcessTitle}</span>`
+                  + `${activeChevron}`
+                  + `</button>`
+                  + `<div class="thinking-content raw-thinking-content">`
+                  + `<pre class="raw-markdown-pre raw-markdown-pre--thinking"><code>${this.escapeHtml(thinkingCombined)}</code></pre>`
+                  + `</div>`
+                  + `</div>`;
+        }
+
+        if (responseText) {
+            html += `<pre class="raw-markdown-pre raw-markdown-pre--response"><code>${this.escapeHtml(responseText)}</code></pre>`;
+        }
+
+        return html;
+    }
 }

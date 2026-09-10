@@ -269,7 +269,9 @@ class ChatUIController {
                             const rawText = assistantMsg.dataset.rawContent || '';
                             if (isRaw) {
                                 contentEl.dataset.formattedHtml = contentEl.innerHTML;
-                                contentEl.innerHTML = `<pre class="raw-markdown-pre"><code>${this.formatter.escapeHtml(rawText)}</code></pre>`;
+                                const existingThinking = contentEl.querySelector('.thinking-block');
+                                const wasCollapsed = existingThinking ? existingThinking.classList.contains('collapsed') : null;
+                                contentEl.innerHTML = this.formatter.formatRawContent(rawText, wasCollapsed);
                             } else {
                                 if (contentEl.dataset.formattedHtml) {
                                     contentEl.innerHTML = contentEl.dataset.formattedHtml;
