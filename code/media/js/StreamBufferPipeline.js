@@ -44,14 +44,39 @@ class StreamBufferPipeline {
     }
 
     /**
-     * Schedules a timer tick to evaluate settled tokens against the delay window.
+     * Cancels any pending tick timer or animation frame.
+     */
+    _cancelTick() {
+        if (this.timerId !== null) {
+            if (this._isRaf && typeof cancelAnimationFrame === 'function') {
+                cancelAnimationFrame(this.timerId);
+            } else {
+                clearTimeout(this.timerId);
+            }
+            this.timerId = null;
+            this._isRaf = false;
+        }
+    }
+
+    /**
+     * Schedules a frame-synchronized processing tick using requestAnimationFrame.
      */
     scheduleTick() {
         if (this.timerId !== null) return;
-        this.timerId = setTimeout(() => {
-            this.timerId = null;
-            this.processQueue();
-        }, 25);
+        if (typeof requestAnimationFrame === 'function') {
+            this._isRaf = true;
+            this.timerId = requestAnimationFrame(() => {
+                this.timerId = null;
+                this._isRaf = false;
+                this.processQueue();
+            });
+        } else {
+            this._isRaf = false;
+            this.timerId = setTimeout(() => {
+                this.timerId = null;
+                this.processQueue();
+            }, 25);
+        }
     }
 
     /**
@@ -90,10 +115,7 @@ class StreamBufferPipeline {
      * Invoked when generation completes, a tool starts, or the user interrupts.
      */
     flushImmediate() {
-        if (this.timerId !== null) {
-            clearTimeout(this.timerId);
-            this.timerId = null;
-        }
+        this._cancelTick();
 
         let newCommitted = '';
         while (this.tokenQueue.length > 0) {
@@ -113,10 +135,7 @@ class StreamBufferPipeline {
      * Resets internal buffers, queues, and cancels pending timer ticks.
      */
     reset() {
-        if (this.timerId !== null) {
-            clearTimeout(this.timerId);
-            this.timerId = null;
-        }
+        this._cancelTick();
         this.tokenQueue = [];
         this.committedText = '';
         this.accumulatedText = '';

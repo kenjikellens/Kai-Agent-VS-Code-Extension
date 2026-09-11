@@ -1063,11 +1063,22 @@ class ChatUIController {
 
     /**
      * Scrolls chat container element to bottom.
+     * Batches scroll execution via requestAnimationFrame to eliminate forced synchronous layout reflows.
+     * @param {boolean} [immediate=false] True to scroll synchronously without RAF batching.
      */
-    scrollToBottom() {
-        if (this.chatContainer) {
+    scrollToBottom(immediate = false) {
+        if (!this.chatContainer) return;
+        if (immediate || typeof requestAnimationFrame !== 'function') {
             this.chatContainer.scrollTop = this.chatContainer.scrollHeight;
+            return;
         }
+        if (this._scrollRafId) return;
+        this._scrollRafId = requestAnimationFrame(() => {
+            this._scrollRafId = null;
+            if (this.chatContainer) {
+                this.chatContainer.scrollTop = this.chatContainer.scrollHeight;
+            }
+        });
     }
 
     /**

@@ -226,6 +226,24 @@ When implementing or modifying completions across providers, dynamically apply t
   - The raw thinking block utilizes the `.raw-markdown-pre--thinking` modifier (`color: var(--app-muted)`, `border-left: 3px solid var(--app-accent, #38bdf8)`, max-height with internal scrolling).
   - The regular assistant response is isolated within its own cleanly demarcated `.raw-markdown-pre--response` code block (`color: var(--app-fg)`).
 
+---
+
+## 20. Application Performance Pipeline & Rendering Architecture
+
+- **Regex Hoisting & In-Memory Settings Cache**:
+  - Pre-compiled static syntax highlighting regular expressions (`KW_REGEX`, `BOOLEAN_REGEX`, `NUMBER_REGEX`, etc.) in `MarkdownFormatter.js` eliminate repeated array allocation and regex compilation during streaming code blocks.
+  - In-memory caching for `localStorage` lookups (`getSettingCached`, `invalidateSettingsCache`) prevents repetitive synchronous disk reads on every streaming token.
+- **RAF Token Scheduling & Layout Thrashing Elimination**:
+  - `StreamBufferPipeline.js` synchronizes lookahead token batch commits to display refresh frames via `requestAnimationFrame` (`_tickRafId`), preventing unthrottled timer buildup.
+  - `ChatUIController.js` batches scroll operations in RAF (`_scrollRafId`), decoupling layout dimension queries from DOM mutations to eliminate forced synchronous reflows.
+- **Deep Cloning & Session Memory Caching**:
+  - Native `structuredClone` with JSON fallback in `AppState.deepClone()` accelerates message and session state duplication.
+  - `SessionRepository.js` utilizes an in-memory session cache (`_sessionsCache`) to avoid repetitive JSON parsing from localStorage on read operations.
+- **Central Event Delegation & Static Fast-Path Preview**:
+  - `HistoryManager.js` uses centralized event delegation on `this.historyList` instead of attaching per-item click listeners across history records.
+  - `preview_server.js` restricts dynamic module reloading strictly to `/api/*` endpoints, keeping static asset delivery instantaneous.
+
+
 
 
 

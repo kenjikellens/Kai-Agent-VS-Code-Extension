@@ -3,6 +3,57 @@
  * code block syntax formatting, and reasoning <think> block rendering logic.
  */
 class MarkdownFormatter {
+    static KW_REGEX = /\b(def|class|return|import|from|as|if|elif|else|for|while|in|try|except|finally|with|lambda|async|await|function|const|let|var|export|default|new|this|typeof|instanceof|switch|case|break|continue|SELECT|FROM|WHERE|INSERT|UPDATE|DELETE|JOIN|GROUP|BY|ORDER|ASC|DESC|public|private|protected|void|int|string|bool|interface|struct|fn|mut)\b/g;
+    static BOOLEAN_REGEX = /\b(true|false|null|none|True|False|None|undefined|NaN)\b/gi;
+    static NUMBER_REGEX = /\b\d+(\.\d+)?\b/g;
+    static COMMENT_REGEX = /(&lt;!--[\s\S]*?--&gt;|\/\*[\s\S]*?\*\/|\/\/.*|#.*|--.*)/g;
+    static STRING_REGEX = /("""[\s\S]*?"""|'''[\s\S]*?'''|`[\s\S]*?`|&quot;[\s\S]*?&quot;|"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*')/g;
+    static FN_CALL_REGEX = /\b([a-zA-Z_]\w*)\s*(?=\()/g;
+
+    constructor() {
+        this._settingsCache = null;
+        if (typeof window !== 'undefined') {
+            window.addEventListener('storage', () => {
+                this._settingsCache = null;
+            });
+        }
+    }
+
+    /**
+     * Retrieves setting from in-memory cache, refreshing from localStorage on cache miss.
+     * @param {string} key Storage key.
+     * @param {string} defaultValue Fallback default value.
+     * @returns {string} Setting value.
+     */
+    getSettingCached(key, defaultValue = '') {
+        if (!this._settingsCache) {
+            this._settingsCache = {};
+        }
+        if (this._settingsCache[key] !== undefined) {
+            return this._settingsCache[key];
+        }
+        try {
+            const val = localStorage.getItem(key);
+            this._settingsCache[key] = val !== null ? val : defaultValue;
+        } catch (_) {
+            this._settingsCache[key] = defaultValue;
+        }
+        return this._settingsCache[key];
+    }
+
+    /**
+     * Clears or updates cached setting values.
+     * @param {string} [key] Optional specific key to invalidate, or clears all if omitted.
+     */
+    invalidateSettingsCache(key = null) {
+        if (!this._settingsCache) return;
+        if (key) {
+            delete this._settingsCache[key];
+        } else {
+            this._settingsCache = null;
+        }
+    }
+
     /**
      * Formats basic HTML entities safely to prevent injection.
      * @param {string} text Raw input string.
@@ -54,7 +105,7 @@ class MarkdownFormatter {
         const isHtml = ['html', 'htm', 'xml', 'svg', 'markup', 'vue', 'jsx', 'tsx'].includes((lang || '').toLowerCase());
 
         // 1. Comments
-        esc = esc.replace(/(&lt;!--[\s\S]*?--&gt;|\/\*[\s\S]*?\*\/|\/\/.*|#.*|--.*)/g, (m) => saveToken('comment', m));
+        esc = esc.replace(MarkdownFormatter.COMMENT_REGEX, (m) => saveToken('comment', m));
 
         // 2. HTML / XML Tags (DOCTYPE, tags & attributes)
         if (isHtml || /&lt;[\s\S]+&gt;/.test(esc)) {
@@ -76,28 +127,20 @@ class MarkdownFormatter {
         }
 
         // 3. Strings
-        esc = esc.replace(/("""[\s\S]*?"""|'''[\s\S]*?'''|`[\s\S]*?`|&quot;[\s\S]*?&quot;|"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*')/g, (m) => {
+        esc = esc.replace(MarkdownFormatter.STRING_REGEX, (m) => {
             if (m.includes('__TOK_')) return m;
             return saveToken('string', m);
         });
 
         // 4. Numbers & Booleans
-        esc = esc.replace(/\b(true|false|null|none|True|False|None|undefined|NaN)\b/gi, (m) => saveToken('boolean', m));
-        esc = esc.replace(/\b\d+(\.\d+)?\b/g, (m) => saveToken('number', m));
+        esc = esc.replace(MarkdownFormatter.BOOLEAN_REGEX, (m) => saveToken('boolean', m));
+        esc = esc.replace(MarkdownFormatter.NUMBER_REGEX, (m) => saveToken('number', m));
 
         // 5. Keywords
-        const keywords = [
-            'def', 'class', 'return', 'import', 'from', 'as', 'if', 'elif', 'else', 'for', 'while', 'in',
-            'try', 'except', 'finally', 'with', 'lambda', 'async', 'await', 'function', 'const', 'let', 'var',
-            'export', 'default', 'new', 'this', 'typeof', 'instanceof', 'switch', 'case', 'break', 'continue',
-            'SELECT', 'FROM', 'WHERE', 'INSERT', 'UPDATE', 'DELETE', 'JOIN', 'GROUP', 'BY', 'ORDER', 'ASC', 'DESC',
-            'public', 'private', 'protected', 'void', 'int', 'string', 'bool', 'interface', 'struct', 'fn', 'mut'
-        ];
-        const kwRegex = new RegExp(`\\b(${keywords.join('|')})\\b`, 'g');
-        esc = esc.replace(kwRegex, (m) => saveToken('keyword', m));
+        esc = esc.replace(MarkdownFormatter.KW_REGEX, (m) => saveToken('keyword', m));
 
         // 6. Function calls: name(...)
-        esc = esc.replace(/\b([a-zA-Z_]\w*)\s*(?=\()/g, (m, fnName) => saveToken('function', fnName));
+        esc = esc.replace(MarkdownFormatter.FN_CALL_REGEX, (m, fnName) => saveToken('function', fnName));
 
         // Restore tokens
         esc = esc.replace(/__TOK_(\d+)__/g, (m, id) => tokens[Number(id)]);
@@ -295,9 +338,9 @@ class MarkdownFormatter {
         // Check preferences to render or strip <think>...</think> blocks
         const thinkingBlocks = [];
         if (isThinkingEnabled) {
-            const showThinking = localStorage.getItem('kai.showThinking') !== 'false';
-            const keepThinkingExpanded = localStorage.getItem('kai.keepThinkingExpanded') !== 'false';
-            const keepThinkingFinishedExpanded = localStorage.getItem('kai.keepThinkingFinishedExpanded') === 'true';
+            const showThinking = this.getSettingCached('kai.showThinking', 'true') !== 'false';
+            const keepThinkingExpanded = this.getSettingCached('kai.keepThinkingExpanded', 'true') !== 'false';
+            const keepThinkingFinishedExpanded = this.getSettingCached('kai.keepThinkingFinishedExpanded', 'false') === 'true';
 
             const chevronUp = DOMUtils.getChevronUpSvgString('thinking-chevron');
             const chevronDown = DOMUtils.getChevronSvgString('thinking-chevron');
@@ -603,10 +646,7 @@ class MarkdownFormatter {
 
         const i18n = (typeof window !== 'undefined' && window.KAI_I18N) ? window.KAI_I18N : {};
         const thinkingProcessTitle = i18n.thinkingProcess || 'Thinking Process';
-        let keepThinkingFinishedExpanded = false;
-        try {
-            keepThinkingFinishedExpanded = localStorage.getItem('kai.keepThinkingFinishedExpanded') === 'true';
-        } catch (_) {}
+        const keepThinkingFinishedExpanded = this.getSettingCached('kai.keepThinkingFinishedExpanded', 'false') === 'true';
 
         const isCollapsed = forceCollapsed !== null ? forceCollapsed : !keepThinkingFinishedExpanded;
         const activeChevron = isCollapsed 

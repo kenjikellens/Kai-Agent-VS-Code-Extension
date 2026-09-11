@@ -97,6 +97,12 @@ Whenever architecture, UI components, runtime features, or system design guideli
     - Preserves the user's active collapsed state across raw mode toggles (`formatRawContent(rawText, wasCollapsed)`).
     - The raw thinking block utilizes `.raw-markdown-pre--thinking` with muted text (`color: var(--app-muted)`), an accent border (`border-left: 3px solid var(--app-accent, #38bdf8)`), and a capped scrollable viewport (`max-height: 220px`). The regular response renders cleanly in `.raw-markdown-pre--response` (`color: var(--app-fg)`).
 
+13. **Application Performance Pipeline & Rendering Optimization**:
+    - **Regex Hoisting & In-Memory Settings Cache**: `MarkdownFormatter.js` pre-compiles and hoists static syntax highlighting regexes and maintains an in-memory cache for `localStorage` lookups (`getSettingCached`), eliminating repeated object allocations and synchronous disk reads during token streaming.
+    - **RAF Token Scheduling & Layout Thrashing Elimination**: `StreamBufferPipeline.js` commits lookahead token batches on `requestAnimationFrame` ticks. `ChatUIController.js` batches scroll operations in RAF, decoupling DOM writes from scroll height measurements to eliminate forced layout reflows.
+    - **Deep State Cloning & Session In-Memory Caching**: Native `structuredClone` in `AppState.deepClone()` accelerates state duplication, and `SessionRepository.js` keeps an in-memory session cache (`_sessionsCache`) to avoid repetitive JSON disk parsing.
+
+
 
 
 

@@ -14,18 +14,31 @@ class SessionRepository {
         this._isDirty = false;
         this._pendingSession = null;
         this._debounceTimer = null;
+        this._sessionsCache = null;
     }
 
     /**
-     * Retrieves all saved chat sessions from localStorage cache.
+     * Clears in-memory session cache.
+     */
+    invalidateCache() {
+        this._sessionsCache = null;
+    }
+
+    /**
+     * Retrieves all saved chat sessions from in-memory cache or localStorage.
+     * @param {boolean} [forceRefresh=false] True to bypass in-memory cache.
      * @returns {Array<object>} List of saved session objects.
      */
-    getAllSessions() {
+    getAllSessions(forceRefresh = false) {
+        if (!forceRefresh && this._sessionsCache !== null) {
+            return this._sessionsCache;
+        }
         try {
             const storedRaw = localStorage.getItem(this.storageKey);
             if (storedRaw !== null) {
                 const stored = JSON.parse(storedRaw);
-                return Array.isArray(stored) ? stored : [];
+                this._sessionsCache = Array.isArray(stored) ? stored : [];
+                return this._sessionsCache;
             }
 
             const legacy = JSON.parse(localStorage.getItem(this.legacyStorageKey) || '[]');
@@ -36,10 +49,12 @@ class SessionRepository {
             if (completeLegacy.length > 0) {
                 localStorage.setItem(this.storageKey, JSON.stringify(completeLegacy));
             }
-            return completeLegacy;
+            this._sessionsCache = completeLegacy;
+            return this._sessionsCache;
         } catch (e) {
             console.error('SessionRepository: failed to read saved chats', e);
-            return [];
+            this._sessionsCache = [];
+            return this._sessionsCache;
         }
     }
 
@@ -105,6 +120,7 @@ class SessionRepository {
         } else {
             all.unshift(completeSession);
         }
+        this._sessionsCache = all;
         try {
             localStorage.setItem(this.storageKey, JSON.stringify(all));
         } catch (e) {
@@ -124,6 +140,7 @@ class SessionRepository {
         if (!chatId) return;
         const all = this.getAllSessions();
         const filtered = all.filter(c => c.id !== chatId);
+        this._sessionsCache = filtered;
         try {
             localStorage.setItem(this.storageKey, JSON.stringify(filtered));
         } catch (e) {
