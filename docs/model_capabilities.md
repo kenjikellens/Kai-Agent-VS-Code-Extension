@@ -8,7 +8,7 @@ Dit document beschrijft de werking van **Thinking** en **Reasoning Effort** in K
 
 | Provider | Model ID | Thinking Opties | Reasoning Opties | Werking |
 | :--- | :--- | :--- | :--- | :--- |
-| **Google Gemini** | `gemini-3.7-flash`<br>`gemini-3.6-flash`<br>`gemini-3.5-flash`<br>`gemini-3.5-flash-lite`<br>`gemini-3-flash-preview`<br>`gemini-3.1-pro-preview`<br>`gemini-3.1-flash-lite` | `High`, `Medium`, `Low`, `Off` | Geen | Gemini denkbudget niveaus direct instelbaar via geïntegreerd flyout menu. |
+| **Google Gemini** | `gemini-3.8-flash`<br>`gemini-3.7-flash`<br>`gemini-3.6-flash`<br>`gemini-3.5-flash`<br>`gemini-3.5-flash-lite`<br>`gemini-3-flash-preview`<br>`gemini-3.1-pro-preview`<br>`gemini-3.1-flash-lite` | `High`, `Medium`, `Low`, `Off` | Geen | Gemini denkbudget niveaus direct instelbaar via geïntegreerd flyout menu. |
 | **Mistral AI** | `mistral/magistral-small-latest`<br>`mistral/magistral-medium-latest`<br>`mistral/mistral-small-latest`<br>`mistral/mistral-medium-3-5`<br>`mistral/codestral-latest` | `Thinking: On` / `Thinking: Off` | Geen | Thinking toggle via geïntegreerd flyout menu (`(thinking)`). |
 | **Mistral AI** | `mistral/open-mixtral-8x22b` | `off` | Geen | Standaard model zonder thinking. |
 | **Cerebras** | `cerebras/llama-3.3-70b`<br>`cerebras/llama-3.1-8b` | `off` | Geen | Standaard snelle inferentie. |
