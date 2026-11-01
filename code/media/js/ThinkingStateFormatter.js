@@ -17,9 +17,17 @@ class ThinkingStateFormatter {
      * Updates the active LM Studio model capabilities map and caches it locally.
      * @param {Record<string, object>} capabilities Map of model identifiers to ModelCapabilities.
      */
+    /**
+     * Updates the active LM Studio model capabilities map and caches it locally.
+     * Synchronizes global window.KAI_LMSTUDIO_CAPABILITIES for provider payload builders.
+     * @param {Record<string, object>} capabilities Map of model identifiers to ModelCapabilities.
+     */
     static setLMStudioCapabilities(capabilities) {
         if (capabilities && typeof capabilities === 'object' && Object.keys(capabilities).length > 0) {
             ThinkingStateFormatter.lmStudioCapabilities = capabilities;
+            if (typeof window !== 'undefined') {
+                window.KAI_LMSTUDIO_CAPABILITIES = capabilities;
+            }
             try {
                 localStorage.setItem('kai.lmStudioCapabilitiesCache', JSON.stringify(capabilities));
             } catch {}
@@ -86,11 +94,35 @@ class ThinkingStateFormatter {
         const rawModel = isThinkingSuffix ? modelId.slice(0, -11) : modelId;
         const lowerRaw = rawModel.toLowerCase();
 
-        // 1. Check dynamic LM Studio manifest capabilities first
-        const cap = ThinkingStateFormatter.lmStudioCapabilities[rawModel] ||
-            ThinkingStateFormatter.lmStudioCapabilities[lowerRaw] ||
-            ThinkingStateFormatter.lmStudioCapabilities[modelId] ||
-            ThinkingStateFormatter.lmStudioCapabilities[lower];
+        // 1. Check dynamic LM Studio manifest capabilities first with robust alias resolution
+        const capsMap = ThinkingStateFormatter.lmStudioCapabilities || {};
+        const strippedSlash = rawModel.includes('/') ? rawModel.split('/').pop() : '';
+        const strippedAt = rawModel.includes('@') ? rawModel.split('@')[0] : '';
+        const strippedGguf = rawModel.replace(/\.gguf$/i, '');
+        const bareBase = (strippedSlash || rawModel).split('@')[0].replace(/\.gguf$/i, '');
+
+        const candidateKeys = [
+            rawModel,
+            lowerRaw,
+            modelId,
+            lower,
+            strippedSlash,
+            strippedSlash ? strippedSlash.toLowerCase() : '',
+            strippedAt,
+            strippedAt ? strippedAt.toLowerCase() : '',
+            strippedGguf,
+            strippedGguf ? strippedGguf.toLowerCase() : '',
+            bareBase,
+            bareBase ? bareBase.toLowerCase() : ''
+        ].filter(Boolean);
+
+        let cap = null;
+        for (const key of candidateKeys) {
+            if (capsMap[key]) {
+                cap = capsMap[key];
+                break;
+            }
+        }
 
         if (cap && Array.isArray(cap.fields) && cap.fields.length > 0) {
             const booleanField = cap.fields.find(f => f.type === 'boolean');
@@ -217,7 +249,27 @@ class ThinkingStateFormatter {
             return mistralState;
         }
 
-        // 5. Standard non-thinking models (100% manifest-driven, no hardcoded fallbacks)
+        // 5. Tier 3: Local pattern recognition vangnet for thinking/reasoning models
+        const isReasoningPattern = /(ornith|qwen|deepseek|r1|qwq|gemma-4|gemma_4|nemotron|bonsai|lfm|thinking|reasoning)/i.test(lowerRaw);
+        if (isReasoningPattern) {
+            const stored = localStorage.getItem(`kai.lmStudioThinking.${rawModel}`) ??
+                localStorage.getItem(`kai.lmStudioThinking.${lowerRaw}`) ??
+                localStorage.getItem(`kai.lmStudioThinking.${modelId}`);
+            const isThinkingOn = stored !== 'false';
+            const patternState = {
+                rawModel: rawModel,
+                hasThinkingToggle: true,
+                isThinkingOn: isThinkingOn,
+                hasReasoningEffort: false,
+                reasoningLevel: 'xhigh',
+                effortOptions: [],
+                effortDisplayName: 'Reasoning Effort'
+            };
+            console.log('[KAI ThinkingState] Tier 3 pattern matched reasoning model:', patternState);
+            return patternState;
+        }
+
+        // 6. Standard non-thinking models (100% manifest-driven, no hardcoded fallbacks)
         console.log('[KAI ThinkingState] No reasoning capabilities for:', rawModel);
         return {
             rawModel: rawModel,

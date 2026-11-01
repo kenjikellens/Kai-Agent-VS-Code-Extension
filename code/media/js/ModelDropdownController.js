@@ -717,6 +717,7 @@ class ModelDropdownController {
         console.log('[KAI Dropdown] updateConnectionStatus:', message.lmStudioModels?.length, 'LM models, connected:', message.connected);
 
         if (message.lmStudioCapabilities) {
+            window.KAI_LMSTUDIO_CAPABILITIES = message.lmStudioCapabilities;
             ThinkingStateFormatter.setLMStudioCapabilities(message.lmStudioCapabilities);
         }
 
