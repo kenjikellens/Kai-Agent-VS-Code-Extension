@@ -1,4 +1,5 @@
 import * as path from 'path';
+import { IHostServices } from '../core/IHostServices';
 
 /**
  * Interface representing the context provided to each tool during execution.
@@ -10,6 +11,8 @@ export interface ToolContext {
     extensionPath?: string;
     /** The unique ID of the active chat or execution turn. */
     turnId?: string;
+    /** Optional host services adapter (VS Code IDE or Standalone Desktop). */
+    hostServices?: IHostServices;
 }
 
 /**

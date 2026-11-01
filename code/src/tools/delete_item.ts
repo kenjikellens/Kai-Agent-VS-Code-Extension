@@ -1,5 +1,4 @@
 import * as fs from 'fs';
-import * as vscode from 'vscode';
 import { Tool, ToolContext, FunctionDeclaration, resolveSafePath } from './Tool';
 import { TurnSnapshotManager } from '../services/TurnSnapshotManager';
 
@@ -89,10 +88,6 @@ export class DeleteItemTool extends Tool {
             } catch (err: any) {
                 errors.push(`Failed to delete "${relPath}": ${err.message || err}`);
             }
-        }
-
-        if (deleted.length > 0) {
-            vscode.window.showInformationMessage(`Kai: Deleted ${deleted.length} item(s)`);
         }
 
         const results: string[] = [];

@@ -12,6 +12,11 @@ export class ContextManager {
     private readonly maxTokens: number;
     private readonly reservedTokens: number;
 
+    /**
+     * Initializes ContextManager with token budget limits.
+     * @param maxTokens Maximum total tokens allowed.
+     * @param reservedTokens Token headroom reserved for completions.
+     */
     constructor(maxTokens: number = 16000, reservedTokens: number = 4000) {
         this.maxTokens = maxTokens;
         this.reservedTokens = reservedTokens;
@@ -51,7 +56,6 @@ export class ContextManager {
         }
 
         // For unusually large histories, shorten already-created summaries again.
-        // Messages remain present so role/order semantics are preserved.
         return compressed.map((message, index) => {
             if (protectedIndexes.has(index)) {
                 return message;
@@ -64,6 +68,9 @@ export class ContextManager {
         });
     }
 
+    /**
+     * Identifies indices of essential messages that must never be compressed (system prompt, first user, recent turns).
+     */
     private getProtectedIndexes(messages: ContextMessage[]): Set<number> {
         const protectedIndexes = new Set<number>();
         const systemIndex = messages.findIndex((message) => message.role === 'system');
@@ -83,6 +90,9 @@ export class ContextManager {
         return protectedIndexes;
     }
 
+    /**
+     * Generates a concise summary placeholder for an older message.
+     */
     private createSummary(message: ContextMessage): string {
         const lineCount = message.content.split(/\r?\n/).length;
         if (message.role === 'assistant') {

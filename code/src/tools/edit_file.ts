@@ -1,6 +1,4 @@
 import * as fs from 'fs';
-import * as path from 'path';
-import * as vscode from 'vscode';
 import { Tool, ToolContext, FunctionDeclaration, resolveSafePath } from './Tool';
 import { FileToolUtils } from './FileToolUtils';
 import { FuzzyMatchHelper } from './FuzzyMatchHelper';
@@ -55,7 +53,6 @@ export class EditFileTool extends Tool {
 
         const updatedContent = content.replace(searchStr, replaceStr);
         await fs.promises.writeFile(targetPath, updatedContent, 'utf8');
-        vscode.window.showInformationMessage(`Kai: Edited file ${path.basename(args.path)}`);
         return `Successfully updated file: ${args.path}`;
     }
 }

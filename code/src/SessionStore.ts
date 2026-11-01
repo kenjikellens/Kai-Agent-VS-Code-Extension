@@ -1,92 +1,83 @@
-import * as vscode from 'vscode';
+import { ISessionStorage, ChatSessionRecord } from './core/ISessionStorage';
+
+export { ChatSessionRecord };
 
 /**
- * Interface representing a chat session record stored in Memento persistence.
- */
-export interface ChatSessionRecord {
-    /** Unique session identifier. */
-    id: string;
-    /** Display title for the session. */
-    title: string;
-    /** Array of stored chat message objects. */
-    messages: any[];
-    /** Array of stored UI event logs. */
-    uiEvents?: any[];
-    /** Active model identifier used in session. */
-    model?: string;
-    /** Reasoning thinking toggle flag. */
-    thinking?: boolean;
-    /** Timestamp of last interaction in milliseconds. */
-    timestamp: number;
-}
-
-/**
- * SessionStore encapsulates reading, writing, and deleting persistent chat history
- * records in VS Code workspaceState / Memento storage.
+ * SessionStore encapsulates reading, writing, and deleting persistent chat history records.
+ * Uses a pluggable ISessionStorage driver (e.g. Memento in VS Code, JSON file in Standalone Desktop).
  */
 export class SessionStore {
-    private static readonly STORAGE_KEY = 'kai.chats';
+    private cache: Record<string, ChatSessionRecord> = {};
 
     /**
      * Initializes a new instance of SessionStore.
-     * @param memento The VS Code Memento storage instance (workspaceState or globalState).
+     * @param storage Pluggable storage driver implementing ISessionStorage.
      */
-    constructor(private readonly memento: vscode.Memento) {}
+    constructor(private readonly storage?: ISessionStorage) {
+        if (this.storage) {
+            const loaded = this.storage.load();
+            if (loaded instanceof Promise) {
+                loaded.then(data => { this.cache = data || {}; });
+            } else {
+                this.cache = loaded || {};
+            }
+        }
+    }
 
     /**
      * Retrieves the sorted array of all saved chat session records.
      * @returns Array of chat sessions sorted by timestamp descending.
      */
     public getHistoryList(): ChatSessionRecord[] {
-        const chatsMap = this.memento.get<Record<string, ChatSessionRecord>>(SessionStore.STORAGE_KEY) || {};
-        return Object.values(chatsMap).sort((a, b) => b.timestamp - a.timestamp);
+        return Object.values(this.cache).sort((a, b) => b.timestamp - a.timestamp);
     }
 
     /**
-     * Retrieves a specific chat session record by its unique ID.
-     * @param chatId The unique chat session ID.
+     * Retrieves a single chat session by its unique ID.
+     * @param chatId The session ID to look up.
      * @returns The ChatSessionRecord if found, or undefined.
      */
     public getChat(chatId: string): ChatSessionRecord | undefined {
-        const chatsMap = this.memento.get<Record<string, ChatSessionRecord>>(SessionStore.STORAGE_KEY) || {};
-        return chatsMap[chatId];
+        return this.cache[chatId];
     }
 
     /**
-     * Saves or updates a chat session record in persistent storage.
-     * @param chat The ChatSessionRecord object to persist.
+     * Saves or updates a chat session record in storage.
+     * @param chat The session record to persist.
      */
-    public async saveChat(chat: any): Promise<void> {
+    public async saveChat(chat: ChatSessionRecord): Promise<void> {
         if (!chat || !chat.id) {
             return;
         }
-        const chatsMap = this.memento.get<Record<string, ChatSessionRecord>>(SessionStore.STORAGE_KEY) || {};
-        const previous = chatsMap[chat.id];
-        chatsMap[chat.id] = {
+        const previous = this.cache[chat.id];
+        this.cache[chat.id] = {
             id: chat.id,
             title: chat.title || 'New Chat',
             messages: Array.isArray(chat.messages) ? chat.messages : (previous?.messages || []),
-            uiEvents: Array.isArray(chat.uiEvents) ? chat.uiEvents : (previous?.uiEvents || []),
-            model: chat.model || '',
+            mode: chat.mode || previous?.mode || 'agent',
+            model: chat.model || previous?.model || 'default',
             thinking: chat.thinking !== false,
             timestamp: chat.timestamp || Date.now()
         };
-        await this.memento.update(SessionStore.STORAGE_KEY, chatsMap);
+        if (this.storage) {
+            await this.storage.save(this.cache);
+        }
     }
 
     /**
-     * Deletes a chat session record by its unique ID from persistent storage.
-     * @param chatId The ID of the chat session to remove.
-     * @returns Updated sorted array of remaining chat session records.
+     * Deletes a chat session from storage by ID.
+     * @param chatId The session ID to delete.
+     * @returns Updated list of remaining sessions.
      */
     public async deleteChat(chatId: string): Promise<ChatSessionRecord[]> {
         if (!chatId) {
             return this.getHistoryList();
         }
-        const chatsMap = this.memento.get<Record<string, ChatSessionRecord>>(SessionStore.STORAGE_KEY) || {};
-        if (chatsMap[chatId]) {
-            delete chatsMap[chatId];
-            await this.memento.update(SessionStore.STORAGE_KEY, chatsMap);
+        if (this.cache[chatId]) {
+            delete this.cache[chatId];
+            if (this.storage) {
+                await this.storage.save(this.cache);
+            }
         }
         return this.getHistoryList();
     }

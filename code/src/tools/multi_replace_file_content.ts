@@ -1,6 +1,4 @@
 import * as fs from 'fs';
-import * as path from 'path';
-import * as vscode from 'vscode';
 import { Tool, ToolContext, FunctionDeclaration, resolveSafePath } from './Tool';
 import { FileReplacementHelper, ReplacementChunk } from './FileReplacementHelper';
 import { TurnSnapshotManager } from '../services/TurnSnapshotManager';
@@ -75,7 +73,6 @@ export class MultiReplaceFileContentTool extends Tool {
         await TurnSnapshotManager.getInstance().recordBeforeMutation(turnId, targetPath);
 
         await fs.promises.writeFile(targetPath, lines.join('\n'), 'utf8');
-        vscode.window.showInformationMessage(`Kai: Multi-replaced content in ${path.basename(args.path)}`);
         return `Successfully updated file: ${args.path} (${args.chunks.length} chunks applied)`;
     }
 }

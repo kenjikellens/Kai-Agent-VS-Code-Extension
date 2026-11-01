@@ -1,5 +1,5 @@
 import * as http from 'http';
-import * as vscode from 'vscode';
+import { IHostServices } from './core/IHostServices';
 import { HttpClient } from './HttpClient';
 import { ILLMProvider } from './providers/ILLMProvider';
 import { GeminiClient } from './providers/GeminiClient';
@@ -8,17 +8,18 @@ import { MuseGlimmerStreamParser } from './providers/MuseGlimmerStreamParser';
 import { LMStudioReasoningEngine } from './providers/LMStudioReasoningEngine';
 import { LMStudioManifestParser } from './providers/LMStudioManifestParser';
 
-// Re-export FreeProvider & FREE_PROVIDERS for backward compatibility across modules
 export { FreeProvider, FREE_PROVIDERS };
 
 /**
  * LMStudioClient handles communication with the locally running LM Studio HTTP API server.
+ * Uses IHostServices for configuration retrieval, ensuring platform neutrality across VS Code and Standalone Desktop.
  */
 export class LMStudioClient implements ILLMProvider {
     /** Local models retain the existing text-based tool-call protocol. */
     public supportsNativeFunctionCalling(): boolean {
         return false;
     }
+    private hostServices?: IHostServices;
     private serverUrl: string;
     private apiKey: string;
     private geminiClient: GeminiClient;
@@ -26,13 +27,16 @@ export class LMStudioClient implements ILLMProvider {
 
     /**
      * Initializes a new instance of LMStudioClient.
-     * @param serverUrl Base API URL of LM Studio (default: "http://localhost:1234/v1").
+     * @param serverUrl Base API URL of LM Studio.
      * @param apiKey Optional API key.
+     * @param hostServices Optional host services adapter for settings retrieval.
      */
-    constructor(serverUrl?: string, apiKey?: string) {
-        const config = vscode.workspace.getConfiguration('kai');
-        this.serverUrl = serverUrl || config.get<string>('serverUrl') || 'http://localhost:1234/v1';
-        this.apiKey = apiKey || config.get<string>('apiKey') || process.env.GEMINI_API_KEY || '';
+    constructor(serverUrl?: string, apiKey?: string, hostServices?: IHostServices) {
+        this.hostServices = hostServices;
+        const configuredUrl = this.hostServices?.getConfiguration<string>('kai', 'serverUrl');
+        const configuredKey = this.hostServices?.getConfiguration<string>('kai', 'apiKey');
+        this.serverUrl = serverUrl || configuredUrl || 'http://localhost:1234/v1';
+        this.apiKey = apiKey || configuredKey || process.env.GEMINI_API_KEY || '';
         this.geminiClient = new GeminiClient(this.apiKey);
         this.freeProviderClient = new FreeProviderClient();
         this._lastTokensPerSecond = null;
@@ -53,14 +57,22 @@ export class LMStudioClient implements ILLMProvider {
      */
     private parseServerUrl(): { hostname: string; port: number; pathPrefix: string } {
         try {
-            const parsed = new URL(this.serverUrl);
+            let url = (this.serverUrl || 'http://localhost:1234/v1').trim();
+            if (!url.startsWith('http://') && !url.startsWith('https://')) {
+                url = 'http://' + url;
+            }
+            const parsed = new URL(url);
+            let pathPrefix = parsed.pathname.replace(/\/$/, '');
+            if (!pathPrefix) {
+                pathPrefix = '/v1';
+            }
             return {
-                hostname: parsed.hostname || 'localhost',
-                port: parsed.port ? parseInt(parsed.port, 10) : 80,
-                pathPrefix: parsed.pathname.replace(/\/$/, '')
+                hostname: parsed.hostname || '127.0.0.1',
+                port: parsed.port ? parseInt(parsed.port, 10) : 1234,
+                pathPrefix: pathPrefix
             };
         } catch {
-            return { hostname: 'localhost', port: 1234, pathPrefix: '/v1' };
+            return { hostname: '127.0.0.1', port: 1234, pathPrefix: '/v1' };
         }
     }
 
@@ -92,25 +104,27 @@ export class LMStudioClient implements ILLMProvider {
     }
 
     /**
-     * Probes local LM Studio REST endpoints (v1 and v0 API routes) to discover available chat models.
-     * Updates model availability across the extension provider state.
+     * Fetches local LM Studio models via HTTP GET /models with IPv4 and path fallbacks.
      */
     public async getLMStudioModels(): Promise<string[]> {
         const { hostname, port, pathPrefix } = this.parseServerUrl();
         const urlsToTry = [
+            `http://${hostname}:${port}${pathPrefix}/models`,
+            `http://${hostname === 'localhost' ? '127.0.0.1' : 'localhost'}:${port}${pathPrefix}/models`,
+            `http://${hostname}:${port}/v1/models`,
+            `http://${hostname}:${port}/api/v0/models`,
+            `http://${hostname}:${port}/models`,
             `http://127.0.0.1:${port || 1234}/v1/models`,
             `http://127.0.0.1:${port || 1234}/api/v0/models`,
             `http://127.0.0.1:${port || 1234}/models`,
             `http://localhost:${port || 1234}/v1/models`,
             `http://localhost:${port || 1234}/api/v0/models`,
-
-            `http://localhost:${port || 1234}/models`,
-            `http://${hostname}:${port}${pathPrefix}/models`
+            `http://localhost:${port || 1234}/models`
         ];
 
         const uniqueUrls = Array.from(new Set(urlsToTry));
 
-        const probePromises = uniqueUrls.map(url => HttpClient.getJson<{ data: any[] }>(url, {}, 2500));
+        const probePromises = uniqueUrls.map(url => HttpClient.getJson<{ data: any[] }>(url, {}, 800));
         const results = await Promise.allSettled(probePromises);
 
         const allDiscoveredIds: string[] = [];
@@ -136,6 +150,7 @@ export class LMStudioClient implements ILLMProvider {
 
     /**
      * Fetches models currently loaded in LM Studio or Gemini.
+     * Only returns models that are actively loaded in memory (state === 'loaded' or active in lms ps).
      */
     public async getLoadedModels(): Promise<string[]> {
         // 1. Try local lms CLI ps command
@@ -147,14 +162,15 @@ export class LMStudioClient implements ILLMProvider {
         // 2. Try LM Studio api/v0/models endpoint for models with state === 'loaded'
         const { hostname, port } = this.parseServerUrl();
         const urlsToTry = [
+            `http://${hostname}:${port}/api/v0/models`,
+            `http://${hostname === 'localhost' ? '127.0.0.1' : 'localhost'}:${port}/api/v0/models`,
             `http://127.0.0.1:${port || 1234}/api/v0/models`,
-            `http://localhost:${port || 1234}/api/v0/models`,
-            `http://${hostname}:${port}/api/v0/models`
+            `http://localhost:${port || 1234}/api/v0/models`
         ];
 
         for (const url of Array.from(new Set(urlsToTry))) {
             try {
-                const res = await HttpClient.getJson<{ data: any[] }>(url, {}, 2500);
+                const res = await HttpClient.getJson<{ data: any[] }>(url, {}, 800);
                 if (res && Array.isArray(res.data)) {
                     const loadedIds = res.data
                         .filter((m: any) => m && m.state === 'loaded')
@@ -176,8 +192,7 @@ export class LMStudioClient implements ILLMProvider {
     private async getLocalLoadedModels(): Promise<string[]> {
         return new Promise((resolve) => {
             const { exec } = require('child_process');
-            const config = vscode.workspace.getConfiguration('kai');
-            const customDir = config.get<string>('lmStudioCacheDir') || '';
+            const customDir = this.hostServices?.getConfiguration<string>('kai', 'lmStudioCacheDir') || '';
             const lmsPath = LMStudioManifestParser.resolveLmsExecutablePath(customDir);
             const command = (lmsPath.includes(' ') || lmsPath.includes('\\') || lmsPath.includes('/'))
                 ? `"${lmsPath}" ps --json`
@@ -221,8 +236,7 @@ export class LMStudioClient implements ILLMProvider {
             const loaded = await this.getLoadedModels();
             const isMatch = loaded.some(m => m.toLowerCase().includes(cleanTarget) || cleanTarget.includes(m.toLowerCase()));
             if (!isMatch && loaded.length > 0) {
-                const config = vscode.workspace.getConfiguration('kai');
-                const customDir = config.get<string>('lmStudioCacheDir') || '';
+                const customDir = this.hostServices?.getConfiguration<string>('kai', 'lmStudioCacheDir') || '';
                 const lmsPath = LMStudioManifestParser.resolveLmsExecutablePath(customDir);
                 const { exec } = require('child_process');
                 await new Promise<void>((resolve) => {
@@ -230,7 +244,7 @@ export class LMStudioClient implements ILLMProvider {
                 });
             }
         } catch {
-            // ignore
+            // Ignore unload errors
         }
     }
 
@@ -477,7 +491,7 @@ export class LMStudioClient implements ILLMProvider {
                                 const parsed = JSON.parse(trimmed.slice(6));
                                 processParsedChunk(parsed);
                             } catch {
-                                // ignore partial lines
+                                // Ignore partial lines
                             }
                         }
                     }
@@ -492,7 +506,7 @@ export class LMStudioClient implements ILLMProvider {
                                 processParsedChunk(parsed);
                             }
                         } catch {
-                            // ignore
+                            // Ignore trailing incomplete buffers
                         }
                     }
                     if (isMuseStreaming) {
@@ -519,16 +533,9 @@ export class LMStudioClient implements ILLMProvider {
 
     /**
      * Dynamically applies thinking/reasoning parameters based on the target model family.
-     * First checks LMStudioManifestParser for 100% manifest-driven exact Jinja variables,
-     * and gracefully falls back to LMStudioReasoningEngine if manifest is unavailable.
-     * @param requestParams Target HTTP payload object.
-     * @param model Model ID string.
-     * @param thinking Whether thinking phase is enabled.
-     * @param reasoningEffort Configured reasoning effort ('xhigh', 'medium', 'low', 'none').
      */
     private applyThinkingParameters(requestParams: any, model: string, thinking: boolean, reasoningEffort?: string): void {
-        const config = vscode.workspace.getConfiguration('kai');
-        const customDir = config.get<string>('lmStudioCacheDir') || '';
+        const customDir = this.hostServices?.getConfiguration<string>('kai', 'lmStudioCacheDir') || '';
         const capabilitiesMap = LMStudioManifestParser.parseModelCapabilities(customDir);
         const cap = capabilitiesMap[model] || capabilitiesMap[(model || '').toLowerCase()];
 

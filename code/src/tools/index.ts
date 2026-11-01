@@ -32,17 +32,27 @@ export * from './web_search';
 export * from './utility_tools';
 
 /**
- * Returns an array of available tools filtered by active mode.
- * @param mode The active mode ('agent' | 'planning' | 'ask').
+ * Returns an array of available tools filtered by active mode and workspace context.
+ * @param mode The active mode ('chat' | 'agent' | 'planning' | 'ask').
+ * @param hasWorkspace Whether a workspace directory is currently selected.
  * @returns Array of Tool instances.
  */
-export function getRegisteredTools(mode: 'agent' | 'planning' | 'ask' | string = 'agent'): Tool[] {
+export function getRegisteredTools(mode: 'chat' | 'agent' | 'planning' | 'ask' | string = 'agent', hasWorkspace: boolean = true): Tool[] {
     const utilityTool = new UtilityToolsTool();
     const fetchUrlTool = new FetchUrlTool();
     const webSearchTool = new WebSearchTool();
 
-    // In Ask mode, supply read-only inspection tools + web & utility tools
-    if (mode === 'ask') {
+    // 1. Chat Mode WITHOUT Workspace: only utilities and web access
+    if (mode === 'chat' && !hasWorkspace) {
+        return [
+            utilityTool,
+            fetchUrlTool,
+            webSearchTool
+        ];
+    }
+
+    // 2. Chat or Ask Mode WITH Workspace: read-only workspace inspection + utilities + web
+    if ((mode === 'chat' || mode === 'ask') && hasWorkspace) {
         return [
             new ReadFileTool(),
             new ListDirTool(),
@@ -55,7 +65,7 @@ export function getRegisteredTools(mode: 'agent' | 'planning' | 'ask' | string =
         ];
     }
 
-    // In Agent & Planning mode, supply the full suite of developer tools
+    // 3. Agent & Planning Modes (Full Workspace Developer Tools)
     return [
         new ReadFileTool(),
         new WriteFileTool(),

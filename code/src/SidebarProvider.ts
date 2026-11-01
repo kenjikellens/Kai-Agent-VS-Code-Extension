@@ -8,6 +8,7 @@ import { LMStudioClient, FREE_PROVIDERS } from './LMStudioClient';
 import { LMStudioManifestParser } from './providers/LMStudioManifestParser';
 import { I18nManager } from './i18n';
 import { SessionStore } from './SessionStore';
+import { MementoSessionStorage } from './adapters/VSCodeHostServices';
 import { EditorContextProvider } from './EditorContextProvider';
 import { TurnSnapshotManager } from './services/TurnSnapshotManager';
 
@@ -33,7 +34,7 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
      */
     constructor(context: vscode.ExtensionContext) {
         this._extensionUri = context.extensionUri;
-        this._sessionStore = new SessionStore(context.workspaceState);
+        this._sessionStore = new SessionStore(new MementoSessionStorage(context.workspaceState));
         if (!SidebarProvider._outputChannel) {
             SidebarProvider._outputChannel = vscode.window.createOutputChannel('Kai');
         }

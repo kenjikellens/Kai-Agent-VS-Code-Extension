@@ -68,7 +68,7 @@ export class UtilityToolsTool extends Tool {
     /**
      * Executes the requested utility action.
      * @param args Tool arguments.
-     * @param _context Execution context.
+     * @param context Execution context.
      * @returns Result string of the operation.
      */
     public async execute(args: any, _context?: ToolContext): Promise<string> {

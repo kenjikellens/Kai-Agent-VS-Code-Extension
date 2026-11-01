@@ -1,6 +1,4 @@
 import * as fs from 'fs';
-import * as path from 'path';
-import * as vscode from 'vscode';
 import { Tool, ToolContext, FunctionDeclaration, resolveSafePath } from './Tool';
 import { FileToolUtils } from './FileToolUtils';
 import { TurnSnapshotManager } from '../services/TurnSnapshotManager';
@@ -48,9 +46,7 @@ export class WriteFileTool extends Tool {
         await TurnSnapshotManager.getInstance().recordBeforeMutation(turnId, targetPath);
 
         await FileToolUtils.ensureParentDirExists(targetPath);
-
         await fs.promises.writeFile(targetPath, args.content, 'utf8');
-        vscode.window.showInformationMessage(`Kai: Created/Updated file ${path.basename(args.path)}`);
         return `Successfully wrote ${args.content.length} characters to file: ${args.path}`;
     }
 }

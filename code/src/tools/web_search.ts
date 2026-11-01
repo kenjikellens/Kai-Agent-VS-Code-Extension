@@ -1,6 +1,5 @@
 import * as path from 'path';
 import * as fs from 'fs';
-import * as vscode from 'vscode';
 import { Tool, ToolContext, FunctionDeclaration } from './Tool';
 import { McpProcessBridge } from './McpProcessBridge';
 
@@ -97,15 +96,15 @@ export class WebSearchTool extends Tool {
 
     /**
      * Resolves the relative path to the web-search-mcp server script across different environments.
-     * Evaluates candidates relative to VS Code configuration, extension path, and workspace directory.
+     * Evaluates candidates relative to host configuration, extension path, and workspace directory.
      * @param context The execution context.
      * @returns The resolved absolute path if found, or null otherwise.
      */
     public resolveMcpServerPath(context: ToolContext): string | null {
-        // 1. Check user-configured custom path from VS Code configuration
-        try {
-            if (vscode && vscode.workspace && typeof vscode.workspace.getConfiguration === 'function') {
-                const customPath = vscode.workspace.getConfiguration('kai').get<string>('webSearchMcpPath');
+        // 1. Check user-configured custom path from host services
+        if (context.hostServices) {
+            try {
+                const customPath = context.hostServices.getConfiguration<string>('kai', 'webSearchMcpPath');
                 if (customPath && customPath.trim()) {
                     const resolved = path.isAbsolute(customPath)
                         ? customPath
@@ -114,23 +113,21 @@ export class WebSearchTool extends Tool {
                         return resolved;
                     }
                 }
+            } catch {
+                // Ignore configuration lookup failures
             }
-        } catch {
-            // ignore configuration lookup failures outside active vscode instance
         }
 
         // 2. Candidate relative paths to check dynamically
         const candidates: string[] = [
-            // Relative to current compiled file (out/tools -> ../../web-search-mcp-v0.3.2/dist/index.js)
             path.resolve(__dirname, '../../web-search-mcp-v0.3.2/dist/index.js'),
             path.resolve(__dirname, '../../../web-search-mcp-v0.3.2/dist/index.js'),
             path.resolve(__dirname, '../web-search-mcp-v0.3.2/dist/index.js'),
-
-            // Relative to workspace path
             path.resolve(context.workspacePath, 'web-search-mcp-v0.3.2/dist/index.js'),
             path.resolve(context.workspacePath, '../web-search-mcp-v0.3.2/dist/index.js'),
             path.resolve(context.workspacePath, 'web-search-mcp/dist/index.js'),
-            path.resolve(context.workspacePath, '../web-search-mcp/dist/index.js')
+            path.resolve(context.workspacePath, '../web-search-mcp/dist/index.js'),
+            path.resolve(process.cwd(), 'web-search-mcp-v0.3.2/dist/index.js')
         ];
 
         // If extensionPath is provided in context, add candidates relative to it
