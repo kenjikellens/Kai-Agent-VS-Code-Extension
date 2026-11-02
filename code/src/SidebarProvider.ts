@@ -8,7 +8,7 @@ import { LMStudioClient, FREE_PROVIDERS } from './LMStudioClient';
 import { LMStudioManifestParser } from './providers/LMStudioManifestParser';
 import { I18nManager } from './i18n';
 import { SessionStore } from './SessionStore';
-import { MementoSessionStorage } from './adapters/VSCodeHostServices';
+import { VSCodeHostServices, MementoSessionStorage } from './adapters/VSCodeHostServices';
 import { EditorContextProvider } from './EditorContextProvider';
 import { TurnSnapshotManager } from './services/TurnSnapshotManager';
 
@@ -53,6 +53,7 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
         _token: vscode.CancellationToken
     ) {
         this._view = webviewView;
+        VSCodeHostServices.setActiveWebview(webviewView.webview);
 
         // Configure options to allow scripts and specify local file access roots
         webviewView.webview.options = {
@@ -80,6 +81,10 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
         // Listen for messages received from the webview client
         webviewView.webview.onDidReceiveMessage(async (data) => {
             switch (data.type) {
+                case 'ask_user_response': {
+                    VSCodeHostServices.resolveAskUser(data.requestId, data.answer);
+                    break;
+                }
                 case 'sendMessage': {
                     await this._handleSendMessage(
                         data.messages,
@@ -270,6 +275,7 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
         // Initialize executor and abort controller
         this._activeAbortController = new AbortController();
 
+        const hostServices = new VSCodeHostServices();
         const executor = new AgentExecutor(
             workspacePath,
             extensionPath,
@@ -286,7 +292,8 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
                     toolId: event.toolId,
                     fileName: event.fileName
                 });
-            }
+            },
+            hostServices
         );
 
         this._currentStreamingText = '';

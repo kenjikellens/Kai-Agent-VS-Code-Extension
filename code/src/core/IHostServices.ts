@@ -34,5 +34,15 @@ export interface IHostServices {
      * @param defaultValue Optional fallback value if setting is not defined.
      */
     getConfiguration<T>(section: string, key: string, defaultValue?: T): T;
+
+    /**
+     * Suspends agent execution to request human clarification or multiple-choice selection from the developer.
+     * Dispatches an interactive prompt card to the UI and resolves with the chosen answer string.
+     * @param question The clarification question or prompt for the user.
+     * @param options Optional list of multiple-choice answers for the user to click.
+     * @param allowCustom Whether the user can type a custom response (default true).
+     * @returns The user's selected or typed answer string.
+     */
+    askUser(question: string, options?: string[], allowCustom?: boolean): Promise<string>;
 }
 

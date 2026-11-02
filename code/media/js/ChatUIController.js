@@ -340,6 +340,7 @@ class ChatUIController {
 
     /**
      * Opens an inline editor inside the specified user message row bubble.
+     * Replaces the prompt bubble with an editable textarea while preserving any attached gallery above.
      * @param {HTMLElement} userRow The .user-message-row container.
      */
     openInlineEditor(userRow) {
@@ -393,7 +394,12 @@ class ChatUIController {
             }
         });
 
-        userRow.appendChild(editorDiv);
+        const bubbleWrapper = userRow.querySelector('.user-message-bubble-wrapper');
+        if (bubbleWrapper) {
+            bubbleWrapper.appendChild(editorDiv);
+        } else {
+            userRow.appendChild(editorDiv);
+        }
         autoResize();
         textarea.focus();
         textarea.setSelectionRange(textarea.value.length, textarea.value.length);
@@ -401,6 +407,7 @@ class ChatUIController {
 
     /**
      * Cancels inline editing and restores normal message bubble view.
+     * Removes the active textarea editor and unhides the user bubble and edit button.
      * @param {HTMLElement} userRow The .user-message-row container.
      */
     closeInlineEditor(userRow) {
@@ -678,11 +685,12 @@ class ChatUIController {
     }
 
     /**
-     * Appends a message bubble into the scrollable chat container.
+     * Appends a message bubble and optional attachments into the chat container.
+     * Positions user attachment galleries above the prompt bubble and handles assistant streaming states.
      * @param {string} role Sender role ('user', 'assistant', 'system', or 'file-summary').
      * @param {string} text Message content string.
-     * @param {string} [mode] Active mode for assistant messages.
-     * @param {object} [meta] Metadata for model & thinking parameters.
+     * @param {string|Array} [mode] Active mode for assistant messages or attached files array for user messages.
+     * @param {object} [meta] Metadata for model, thinking, or attached files.
      */
     appendMessage(role, text, mode, meta = {}) {
         this.removeWelcomeHero();
@@ -723,6 +731,40 @@ class ChatUIController {
             rowDiv.className = 'user-message-row';
             rowDiv.dataset.rawPrompt = text;
 
+            // Render attached images and files gallery directly above user message bubble
+            const attachedFiles = (arguments[2] && Array.isArray(arguments[2]))
+                ? arguments[2]
+                : (meta && Array.isArray(meta.attachedFiles)
+                    ? meta.attachedFiles
+                    : (window.appState && Array.isArray(window.appState.lastAttachedFiles) ? window.appState.lastAttachedFiles : []));
+
+            if (attachedFiles && attachedFiles.length > 0) {
+                const gallery = document.createElement('div');
+                gallery.className = 'user-message-attachments-gallery';
+                for (const f of attachedFiles) {
+                    const isImg = (f.content && typeof f.content === 'string' && f.content.startsWith('data:image/')) ||
+                                  (f.dataUrl && typeof f.dataUrl === 'string' && f.dataUrl.startsWith('data:image/')) ||
+                                  f.isImage;
+                    if (isImg && (f.content || f.dataUrl)) {
+                        const img = document.createElement('img');
+                        img.className = 'user-attached-image';
+                        img.src = f.content || f.dataUrl;
+                        img.alt = f.fileName || 'Attached Image';
+                        gallery.appendChild(img);
+                    } else {
+                        const pill = document.createElement('div');
+                        pill.className = 'user-attached-pill';
+                        const fileSvg = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path><polyline points="13 2 13 9 20 9"></polyline></svg>';
+                        pill.innerHTML = `${fileSvg}<span>${this.formatter.escapeHtml(f.fileName || 'file')}</span>`;
+                        gallery.appendChild(pill);
+                    }
+                }
+                rowDiv.appendChild(gallery);
+            }
+
+            const bubbleWrapper = document.createElement('div');
+            bubbleWrapper.className = 'user-message-bubble-wrapper';
+
             const editSvg = window.KAI_SVGS['edit_prompt'] || '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>';
 
             const editBtn = document.createElement('button');
@@ -740,8 +782,9 @@ class ChatUIController {
             contentDiv.innerHTML = formatted;
             messageDiv.appendChild(contentDiv);
 
-            rowDiv.appendChild(editBtn);
-            rowDiv.appendChild(messageDiv);
+            bubbleWrapper.appendChild(editBtn);
+            bubbleWrapper.appendChild(messageDiv);
+            rowDiv.appendChild(bubbleWrapper);
 
             if (this.chatContainer) {
                 this.chatContainer.appendChild(rowDiv);
@@ -797,8 +840,20 @@ class ChatUIController {
             appState.finalizeAssistantUiEvent();
             if (this.currentAssistantMsgElement) {
                 const contentEl = this.currentAssistantMsgElement.querySelector('.message-content');
-                if (contentEl && !contentEl.innerText.trim()) {
-                    this.currentAssistantMsgElement.remove();
+                if (contentEl) {
+                    const cleaned = (this.currentAssistantText || '')
+                        .replace(/<\|?(?:tool_call|tool|execute_plan|action)\|?>[\s\S]*?(?:<\|?\/(?:tool_call|tool|execute_plan|action)\|?>|<\|?(?:tool_call|tool|execute_plan|action)\|?>|$)/gi, '')
+                        .replace(/<\|?tool[\s\S]*$/gi, '')
+                        .replace(/<\|?\/tool[\s\S]*$/gi, '')
+                        .replace(/<\|[\s\S]*$/gi, '')
+                        .trim();
+                    this.currentAssistantText = cleaned;
+                    if (!cleaned) {
+                        this.currentAssistantMsgElement.remove();
+                        this.currentAssistantMsgElement = null;
+                    } else {
+                        contentEl.innerHTML = this.formatter.formatMarkdown(cleaned);
+                    }
                 }
             }
             this.resetAssistantStream();
@@ -1122,7 +1177,8 @@ class ChatUIController {
     }
 
     /**
-     * Renders UI event records or message fallback for session loading.
+     * Rebuilds the chat stream from historical UI event records or fallback messages.
+     * Renders attachment galleries above historical user bubbles and restores assistant responses.
      * @param {Array<object>} uiEvents UI events array.
      * @param {Array<object>} messages Fallback messages array.
      */
@@ -1131,6 +1187,7 @@ class ChatUIController {
             this.chatContainer.innerHTML = '';
         }
         this.resetAssistantStream();
+        this.closeAskUserDock();
 
         const safeUiEvents = Array.isArray(uiEvents) ? uiEvents : [];
         const safeMessages = Array.isArray(messages) ? messages : [];
@@ -1144,13 +1201,14 @@ class ChatUIController {
             type: m.role,
             text: m.content,
             content: m.content,
-            mode: m.mode
+            mode: m.mode,
+            attachedFiles: m.attachedFiles || m.files
         }));
 
         eventsToRender.forEach(evt => {
             if (!evt || typeof evt !== 'object') return;
             if (evt.type === 'user' || evt.role === 'user') {
-                this.appendMessage('user', evt.text || evt.content || '');
+                this.appendMessage('user', evt.text || evt.content || '', evt.attachedFiles || evt.files || []);
             } else if (evt.type === 'assistant' || evt.role === 'assistant') {
                 this.appendMessage('assistant', evt.content || evt.text || '', evt.mode, {
                     model: evt.model,
@@ -1229,4 +1287,193 @@ class ChatUIController {
         this.chatContainer.appendChild(noticeDiv);
         this.scrollToBottom();
     }
+
+    /**
+     * Docks an interactive clarification prompt inside the bottom input card directly above textarea.
+     * Intercepts input submission to resolve human-in-the-loop tool requests with chips or custom text.
+     * @param {Object} req Prompt request object containing requestId, question, options, and allowCustom.
+     * @param {Function} onAnswer Callback triggered with the chosen or typed answer string.
+     */
+    renderAskUserDock(req, onAnswer) {
+        if (!req) return;
+
+        // Close any existing active dock first
+        this.closeAskUserDock();
+
+        const inputCard = document.querySelector('.input-card');
+        if (!inputCard || !this.messageInput) return;
+
+        const dock = document.createElement('div');
+        dock.id = 'ask-user-dock';
+        dock.className = 'ask-user-dock';
+        dock.dataset.requestId = req.requestId || '';
+
+        const header = document.createElement('div');
+        header.className = 'ask-dock-header';
+
+        const iconSvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        iconSvg.setAttribute('width', '15');
+        iconSvg.setAttribute('height', '15');
+        iconSvg.setAttribute('viewBox', '0 0 24 24');
+        iconSvg.setAttribute('fill', 'none');
+        iconSvg.setAttribute('stroke', 'currentColor');
+        iconSvg.setAttribute('stroke-width', '2');
+        iconSvg.setAttribute('stroke-linecap', 'round');
+        iconSvg.setAttribute('stroke-linejoin', 'round');
+        iconSvg.innerHTML = '<circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line>';
+
+        const titleSpan = document.createElement('span');
+        titleSpan.className = 'ask-dock-title';
+        titleSpan.textContent = req.question || 'Clarification needed:';
+
+        header.appendChild(iconSvg);
+        header.appendChild(titleSpan);
+        dock.appendChild(header);
+
+        const resolveAnswer = (answerText) => {
+            if (!answerText || !answerText.trim()) return;
+            const finalAnswer = answerText.trim();
+
+            const confirmCard = document.createElement('div');
+            confirmCard.className = 'message system-message ask-confirmation-card';
+
+            const qSpan = document.createElement('span');
+            qSpan.className = 'ask-confirmation-q';
+            qSpan.textContent = `Clarification: ${req.question || 'Question'}`;
+
+            const arrowSpan = document.createElement('span');
+            arrowSpan.className = 'ask-confirmation-arrow';
+            arrowSpan.textContent = ' -> ';
+
+            const aSpan = document.createElement('span');
+            aSpan.className = 'ask-confirmation-a';
+            aSpan.textContent = `Selected: ${finalAnswer}`;
+
+            confirmCard.appendChild(qSpan);
+            confirmCard.appendChild(arrowSpan);
+            confirmCard.appendChild(aSpan);
+
+            if (this.chatContainer) {
+                this.chatContainer.appendChild(confirmCard);
+                this.scrollToBottom();
+            }
+
+            this.closeAskUserDock();
+
+            if (typeof onAnswer === 'function') {
+                onAnswer(finalAnswer);
+            }
+        };
+
+        if (Array.isArray(req.options) && req.options.length > 0) {
+            const optionsRow = document.createElement('div');
+            optionsRow.className = 'ask-options-row';
+            req.options.forEach(opt => {
+                const chip = document.createElement('button');
+                chip.type = 'button';
+                chip.className = 'ask-option-chip';
+                chip.textContent = opt;
+                chip.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    resolveAnswer(opt);
+                });
+                optionsRow.appendChild(chip);
+            });
+            dock.appendChild(optionsRow);
+        }
+
+        // Cache original input attributes to restore later
+        this._originalPlaceholder = this.messageInput.placeholder;
+        this._originalDisabled = this.messageInput.disabled;
+
+        const handleKeydown = (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                const val = (this.messageInput.value || '').trim();
+                if (val) {
+                    this.messageInput.value = '';
+                    resolveAnswer(val);
+                }
+            }
+        };
+
+        const handleSendClick = (e) => {
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            if (req.allowCustom !== false) {
+                const val = (this.messageInput.value || '').trim();
+                if (val) {
+                    this.messageInput.value = '';
+                    resolveAnswer(val);
+                }
+            }
+        };
+
+        this._askDockInputKeydown = handleKeydown;
+        this._askDockSendClick = handleSendClick;
+
+        if (req.allowCustom === false) {
+            this.messageInput.disabled = true;
+            this.messageInput.placeholder = 'Please choose one of the options above';
+        } else {
+            this.messageInput.disabled = false;
+            this.messageInput.placeholder = 'Type custom response... (or select an option above)';
+            this.messageInput.addEventListener('keydown', handleKeydown, true);
+            this.messageInput.focus();
+        }
+
+        if (this.sendBtn) {
+            this.sendBtn.addEventListener('click', handleSendClick, true);
+        }
+
+        inputCard.insertBefore(dock, this.messageInput);
+        this._activeAskUserDock = dock;
+    }
+
+    /**
+     * Closes the active ask_user dock and restores message input to its default state.
+     * Removes the dock from .input-card, unbinds captured event listeners, and resets input placeholders.
+     */
+    closeAskUserDock() {
+        if (this._activeAskUserDock) {
+            this._activeAskUserDock.remove();
+            this._activeAskUserDock = null;
+        } else {
+            const existing = document.getElementById('ask-user-dock');
+            if (existing) existing.remove();
+        }
+
+        if (this.messageInput) {
+            if (this._askDockInputKeydown) {
+                this.messageInput.removeEventListener('keydown', this._askDockInputKeydown, true);
+                this._askDockInputKeydown = null;
+            }
+            if (this._originalPlaceholder !== undefined) {
+                this.messageInput.placeholder = this._originalPlaceholder;
+                delete this._originalPlaceholder;
+            }
+            if (this._originalDisabled !== undefined) {
+                this.messageInput.disabled = this._originalDisabled;
+                delete this._originalDisabled;
+            }
+        }
+
+        if (this.sendBtn && this._askDockSendClick) {
+            this.sendBtn.removeEventListener('click', this._askDockSendClick, true);
+            this._askDockSendClick = null;
+        }
+    }
+
+    /**
+     * Legacy wrapper that delegates clarification prompt rendering to the bottom dock.
+     * Maintains backward compatibility for callers expecting the card interface.
+     * @param {Object} req Prompt request containing requestId, question, options, and allowCustom.
+     * @param {Function} onAnswer Callback triggered with the selected or typed answer string.
+     */
+    renderAskUserCard(req, onAnswer) {
+        this.renderAskUserDock(req, onAnswer);
+    }
+
 }

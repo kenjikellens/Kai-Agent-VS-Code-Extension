@@ -3580,21 +3580,77 @@ details[open]>summary>.custom-chevron {
 /* ==========================================================================
    USER MESSAGE ROW & INLINE PROMPT EDITOR
    ========================================================================== */
+/* [User Message Row] - Column container aligning attachments gallery above prompt bubble to the right */
 .user-message-row {
   display: flex;
-  align-items: center;
+  flex-direction: column;
+  align-items: flex-end;
   justify-content: flex-end;
-  gap: 8px;
+  gap: 4px;
   max-width: 90%;
   align-self: flex-end;
   margin-bottom: 12px;
 }
 
+/* [User Message Row Editing State] - Full width sizing during inline prompt editing */
 .user-message-row.is-editing {
   width: 90%;
   max-width: 90%;
 }
 
+/* [User Message Bubble Wrapper] - Flex row wrapping edit prompt button and user message bubble */
+.user-message-bubble-wrapper {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  max-width: 100%;
+}
+
+/* [User Message Bubble Wrapper Editing State] - Expands wrapper to full row width during inline prompt editing */
+.user-message-row.is-editing .user-message-bubble-wrapper {
+  width: 100%;
+}
+
+/* [User Message Attachments Gallery] - Flex gallery positioned above user message bubble aligned right */
+.user-message-attachments-gallery {
+  display: flex;
+  flex-direction: row;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  margin-bottom: 6px;
+  max-width: 100%;
+}
+
+/* [User Attached Image] - Attached image thumbnail rendered above user message bubble */
+.user-attached-image {
+  max-height: 160px;
+  max-width: 220px;
+  object-fit: cover;
+  border-radius: var(--app-radius-sm);
+  border: 1px solid var(--app-border);
+}
+
+/* [User Attached Pill] - Compact chip badge representing an attached document file in gallery */
+.user-attached-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--app-font-xs);
+  color: var(--app-fg);
+  background: var(--app-surface-hover);
+  border: 1px solid var(--app-border);
+  border-radius: var(--app-radius-sm);
+  padding: 4px 8px;
+  max-width: 220px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* [User Message Row Content] - Ensures user message bubble inside row respects bounds */
 .user-message-row .user-message {
   max-width: 100%;
   margin-bottom: 0;
@@ -3922,3 +3978,164 @@ details[open]>summary>.custom-chevron {
 .api-key-notice-dismiss:hover {
   color: var(--vscode-foreground, #ffffff);
 }
+
+
+/* [Ask User Card] - Container for human-in-the-loop interactive clarification cards */
+.ask-user-card {
+  margin: 12px 0;
+  padding: 14px 16px;
+  background: var(--app-surface-hover);
+  border: 1px solid var(--app-border);
+  border-radius: var(--app-radius-md);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* [Ask User Card Header] - Header row displaying question icon and title */
+.ask-user-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--app-fg-muted);
+  font-size: var(--app-font-xs);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* [Ask User Question] - Main question typography displaying the prompt to the user */
+.ask-user-question {
+  color: var(--app-fg);
+  font-size: var(--app-font-sm);
+  line-height: 1.45;
+  font-weight: 500;
+}
+
+/* [Ask User Options Container] - Flex container wrapping choice buttons */
+.ask-user-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+/* [Ask User Option Button] - Clickable choice pill inheriting secondary button styles */
+.ask-user-option-btn {
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+/* [Ask User Custom Input Row] - Row containing custom response text field and send button */
+.ask-user-input-row {
+  display: flex;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+/* [Ask User Custom Input] - Text input for custom responses */
+.ask-user-custom-input {
+  flex: 1;
+}
+
+/* [Ask User Resolved Status] - Badge indicating the selected option after resolution */
+.ask-user-resolved {
+  font-size: var(--app-font-xs);
+  color: var(--main-success-color);
+  font-weight: 500;
+  padding: 4px 8px;
+  background: rgba(40, 167, 69, 0.1);
+  border-radius: var(--app-radius-sm);
+  align-self: flex-start;
+}
+
+/* [Ask User Dock] - Bottom bar container docking clarification question and option chips inside input card */
+.ask-user-dock {
+  display: flex;
+  flex-direction: column;
+  background: var(--app-surface-hover);
+  border: 1px solid var(--app-border);
+  border-radius: var(--app-radius-sm);
+  padding: 8px 12px;
+  margin-bottom: 8px;
+}
+
+/* [Ask User Dock Header] - Flex row displaying question icon and clarification prompt text */
+.ask-dock-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: var(--app-font-sm);
+  font-weight: 500;
+  color: var(--app-fg);
+  margin-bottom: 2px;
+}
+
+/* [Ask User Dock Title] - Question text label inside the dock header */
+.ask-dock-title {
+  color: var(--app-fg);
+  line-height: 1.4;
+  word-break: break-word;
+}
+
+/* [Ask User Options Row] - Horizontal flex wrap row containing suggested answer chips */
+.ask-options-row {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+/* [Ask User Option Chip] - Interactive button choice for quick clarification response */
+.ask-option-chip {
+  background: var(--app-surface, rgba(255, 255, 255, 0.05));
+  color: var(--app-fg);
+  border: 1px solid var(--app-border);
+  border-radius: var(--app-radius-sm);
+  padding: 4px 10px;
+  font-size: var(--app-font-xs);
+  font-weight: 500;
+  cursor: pointer;
+  outline: none;
+  transition: background-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+}
+
+/* [Ask User Option Chip Hover] - Hover state with subtle highlight and synchronous box-shadow transition */
+.ask-option-chip:hover {
+  background: var(--app-surface-active, rgba(255, 255, 255, 0.1));
+  border-color: var(--app-border-focus, var(--app-border));
+  box-shadow: var(--app-btn-inset, 0 0 0 1.5px rgba(255, 255, 255, 0.15));
+}
+
+/* [Ask Confirmation Card] - Inline compact pill recording clarification question and user choice */
+.ask-confirmation-card {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--app-font-xs);
+  color: var(--app-fg-muted);
+  background: var(--app-surface-hover);
+  border: 1px solid var(--app-border);
+  border-radius: var(--app-radius-sm);
+  padding: 4px 10px;
+  margin-bottom: 8px;
+}
+
+/* [Ask Confirmation Question] - Label displaying answered clarification question */
+.ask-confirmation-q {
+  font-weight: 500;
+  color: var(--app-fg);
+}
+
+/* [Ask Confirmation Arrow] - Divider arrow separating question and answer */
+.ask-confirmation-arrow {
+  color: var(--app-muted);
+}
+
+/* [Ask Confirmation Answer] - Highlighted user selection in confirmation card */
+.ask-confirmation-a {
+  font-weight: 600;
+  color: var(--main-primary-color, var(--app-accent));
+}
+

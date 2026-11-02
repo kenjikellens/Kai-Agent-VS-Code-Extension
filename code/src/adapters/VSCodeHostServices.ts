@@ -208,6 +208,68 @@ export class VSCodeHostServices implements IHostServices {
 
         return `\n[Diagnostics note]: ${parts.join(', ')}`;
     }
+
+    private static pendingRequests: Map<string, { resolve: (val: string) => void; timer: NodeJS.Timeout }> = new Map();
+    private static activeWebview?: vscode.Webview;
+
+    /**
+     * Registers the active webview instance to receive interactive clarification requests.
+     * @param webview The active webview panel or sidebar.
+     */
+    public static setActiveWebview(webview: vscode.Webview): void {
+        this.activeWebview = webview;
+    }
+
+    /**
+     * Resolves a pending ask_user prompt with the developer's selected choice or typed text.
+     * @param requestId The correlation ID of the pending prompt.
+     * @param answer The developer's response string.
+     * @returns True if request was found and resolved.
+     */
+    public static resolveAskUser(requestId: string, answer: string): boolean {
+        const pending = this.pendingRequests.get(requestId);
+        if (pending) {
+            clearTimeout(pending.timer);
+            this.pendingRequests.delete(requestId);
+            pending.resolve(answer);
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Suspends agent execution to request human clarification or multiple-choice selection from the developer.
+     * Dispatches an interactive prompt card to the UI and resolves with the chosen answer string.
+     * @param question The clarification question or prompt for the user.
+     * @param options Optional list of multiple-choice answers for the user to click.
+     * @param allowCustom Whether the user can type a custom response (default true).
+     * @returns The user's selected or typed answer string.
+     */
+    public askUser(question: string, options?: string[], allowCustom?: boolean): Promise<string> {
+        return new Promise<string>((resolve) => {
+            const requestId = `ask-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
+            const timer = setTimeout(() => {
+                VSCodeHostServices.pendingRequests.delete(requestId);
+                resolve('[ask_user: Timed out waiting for developer response]');
+            }, 300000);
+
+            VSCodeHostServices.pendingRequests.set(requestId, { resolve, timer });
+
+            if (VSCodeHostServices.activeWebview) {
+                VSCodeHostServices.activeWebview.postMessage({
+                    type: 'ask_user_request',
+                    requestId,
+                    question,
+                    options: Array.isArray(options) ? options : [],
+                    allowCustom: allowCustom !== false
+                });
+            } else {
+                clearTimeout(timer);
+                VSCodeHostServices.pendingRequests.delete(requestId);
+                resolve(`[ask_user: Webview UI is not available. Question was: ${question}]`);
+            }
+        });
+    }
 }
 
 /**

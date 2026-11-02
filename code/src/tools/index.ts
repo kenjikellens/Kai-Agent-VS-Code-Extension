@@ -13,6 +13,7 @@ import { FetchUrlTool } from './fetch_url';
 import { DeleteItemTool } from './delete_item';
 import { WebSearchTool } from './web_search';
 import { UtilityToolsTool } from './utility_tools';
+import { AskUserTool } from './ask_user';
 
 export * from './Tool';
 export * from './McpProcessBridge';
@@ -30,6 +31,7 @@ export * from './fetch_url';
 export * from './delete_item';
 export * from './web_search';
 export * from './utility_tools';
+export * from './ask_user';
 
 /**
  * Returns an array of available tools filtered by active mode and workspace context.
@@ -41,17 +43,19 @@ export function getRegisteredTools(mode: 'chat' | 'agent' | 'planning' | 'ask' |
     const utilityTool = new UtilityToolsTool();
     const fetchUrlTool = new FetchUrlTool();
     const webSearchTool = new WebSearchTool();
+    const askUserTool = new AskUserTool();
 
-    // 1. Chat Mode WITHOUT Workspace: only utilities and web access
+    // 1. Chat Mode WITHOUT Workspace: utilities, web access, and interactive ask_user
     if (mode === 'chat' && !hasWorkspace) {
         return [
             utilityTool,
             fetchUrlTool,
-            webSearchTool
+            webSearchTool,
+            askUserTool
         ];
     }
 
-    // 2. Chat or Ask Mode WITH Workspace: read-only workspace inspection + utilities + web
+    // 2. Chat or Ask Mode WITH Workspace: read-only workspace inspection + utilities + web + ask_user
     if ((mode === 'chat' || mode === 'ask') && hasWorkspace) {
         return [
             new ReadFileTool(),
@@ -61,11 +65,12 @@ export function getRegisteredTools(mode: 'chat' | 'agent' | 'planning' | 'ask' |
             new SymbolSearchTool(),
             utilityTool,
             fetchUrlTool,
-            webSearchTool
+            webSearchTool,
+            askUserTool
         ];
     }
 
-    // 3. Agent & Planning Modes (Full Workspace Developer Tools)
+    // 3. Agent & Planning Modes (Full Workspace Developer Tools + ask_user)
     return [
         new ReadFileTool(),
         new WriteFileTool(),
@@ -80,6 +85,7 @@ export function getRegisteredTools(mode: 'chat' | 'agent' | 'planning' | 'ask' |
         new FetchUrlTool(),
         new DeleteItemTool(),
         new WebSearchTool(),
-        utilityTool
+        utilityTool,
+        askUserTool
     ];
 }

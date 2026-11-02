@@ -2,10 +2,13 @@ import * as path from 'path';
 import * as fs from 'fs';
 import { LLMProviderFactory } from './providers/LLMProviderFactory';
 import { LMStudioClient } from './LMStudioClient';
+import { IHostServices } from './core/IHostServices';
 import { Tool, getRegisteredTools } from './tools';
 import { ContextManager, ContextMessage } from './ContextManager';
 import { EditorContextProvider, EditorContext } from './EditorContextProvider';
 import { DiagnosticsHelper } from './tools/DiagnosticsHelper';
+import { JsonRepairPipeline } from './core/JsonRepairPipeline';
+import { ToolAliasDictionary } from './core/ToolAliasDictionary';
 
 /**
  * AgentExecutor coordinates the autonomous AI agent loop.
@@ -20,6 +23,7 @@ export class AgentExecutor {
     private onProgress: (event: { type: string; text?: string; tool?: string; query?: string; output?: string; toolId?: string; fileName?: string }) => void;
     private tools: Tool[];
     private contextManager: ContextManager;
+    private hostServices?: IHostServices;
 
     /**
      * Initializes a new instance of the AgentExecutor.
@@ -34,7 +38,8 @@ export class AgentExecutor {
         extensionPath: string,
         serverUrl: string,
         temperature: number,
-        onProgress: (event: { type: string; text?: string; tool?: string; query?: string; output?: string; toolId?: string; fileName?: string }) => void
+        onProgress: (event: { type: string; text?: string; tool?: string; query?: string; output?: string; toolId?: string; fileName?: string }) => void,
+        hostServices?: IHostServices
     ) {
         this.workspacePath = workspacePath;
         this.extensionPath = extensionPath;
@@ -42,6 +47,7 @@ export class AgentExecutor {
         this.temperature = temperature;
         this.onProgress = onProgress;
         this.tools = getRegisteredTools();
+        this.hostServices = hostServices;
         this.contextManager = new ContextManager();
     }
 
@@ -169,6 +175,8 @@ export class AgentExecutor {
             }
         }
 
+        this.contextManager.configureForModel(model, provider);
+
         let promptWithContext = userPrompt;
         if (contextPrefix) {
             promptWithContext = `${contextPrefix}\n${userPrompt}`;
@@ -198,6 +206,7 @@ export class AgentExecutor {
             this.onProgress({ type: 'status_update', text: 'Processing...' });
         }
 
+        let parseRetryCount = 0;
         while (iteration < maxIterations) {
             iteration++;
             this.onProgress({ type: 'status_update', text: 'Processing...' });
@@ -249,6 +258,20 @@ export class AgentExecutor {
             lastAssistantResponse = response;
 
             if (!toolCall) {
+                const toolCallIntentRegex = /(?:<\|?tool_call\|?>|call:\w+|\{\s*["'](?:type|action|tool|name|path|command|chunks|query)["'])/i;
+                if (toolCallIntentRegex.test(response) && parseRetryCount < 2) {
+                    parseRetryCount++;
+                    messages.push({ role: 'assistant', content: response });
+                    messages.push({
+                        role: 'user',
+                        content: 'System Notice: A tool call was detected in your response, but the JSON payload could not be parsed. Please output a valid JSON tool call with double-quoted keys and properly escaped newlines.'
+                    });
+                    this.onProgress({
+                        type: 'status_update',
+                        text: `Retrying tool call syntax (attempt ${parseRetryCount}/2)...`
+                    });
+                    continue;
+                }
                 // No tools requested, agent is done
                 if (!response.trim()) {
                     this.onProgress({
@@ -259,6 +282,8 @@ export class AgentExecutor {
                 }
                 break;
             }
+
+            parseRetryCount = 0;
 
             // Preserve native call metadata so the provider can associate the tool result
             // with the exact call on the following model turn.
@@ -532,56 +557,42 @@ export class AgentExecutor {
      * Auto-infers tool type from payload schema if "type" field is omitted by the model.
      */
     private parseJsonString(jsonStr: string): { name: string; args: any; query: string } | null {
-        try {
-            const parsed = JSON.parse(jsonStr.trim());
-            if (parsed && typeof parsed === 'object') {
-                let type = parsed.type || parsed.action || parsed.tool || parsed.name || parsed.function;
-                
-                // Infer tool type from object signature if type is omitted by model
-                if (!type) {
-                    if (Array.isArray(parsed.chunks) || (parsed.targetContent && parsed.replacementContent)) {
-                        type = parsed.chunks && parsed.chunks.length > 1 ? 'multi_replace_file_content' : 'replace_file_content';
-                    } else if ((parsed.path || parsed.paths) && (parsed.action === 'delete' || parsed.paths !== undefined)) {
-                        type = 'delete_item';
-                    } else if (parsed.path && parsed.content !== undefined) {
-                        type = 'write_file';
-                    } else if (parsed.path && parsed.content === undefined) {
-                        type = 'read_file';
-                    } else if (parsed.command) {
-                        type = 'run_command';
-                    } else if (parsed.query && !parsed.command) {
-                        type = 'grep_search';
-                    }
-                }
-
-                if (type && typeof type === 'string') {
-                    // Normalize common alias names
-                    const normalizedType = type.toLowerCase() === 'full-web-search' || type.toLowerCase() === 'websearch'
-                        ? 'web_search'
-                        : type.toLowerCase();
-                    const matchedTool = this.tools.find(t => t.name.toLowerCase() === normalizedType);
-                    if (matchedTool) {
-                        const args = { ...parsed };
-                        delete args.type;
-                        delete args.action;
-                        delete args.tool;
-                        delete args.name;
-                        delete args.function;
-
-                        let query = `Executing ${matchedTool.name}`;
-                        if (args.path) query = `${matchedTool.name}: ${Array.isArray(args.path) ? args.path.join(', ') : args.path}`;
-                        else if (args.paths) query = `${matchedTool.name}: ${Array.isArray(args.paths) ? args.paths.join(', ') : args.paths}`;
-                        else if (args.command) query = `${matchedTool.name}: ${args.command}`;
-                        else if (args.query) query = `${matchedTool.name}: ${args.query}`;
-                        else if (args.url) query = `${matchedTool.name}: ${args.url}`;
-
-                        return { name: matchedTool.name, args, query };
-                    }
-                }
-            }
-        } catch {
-            // Ignore syntax errors
+        const repairResult = JsonRepairPipeline.parseWithRepair(jsonStr);
+        if (!repairResult || !repairResult.parsed || typeof repairResult.parsed !== 'object') {
+            return null;
         }
+
+        const parsed = repairResult.parsed;
+        let type = parsed.type || parsed.action || parsed.tool || parsed.name || parsed.function;
+        if (!type) {
+            type = ToolAliasDictionary.inferToolType(parsed);
+        }
+
+        if (type && typeof type === 'string') {
+            const canonicalName = ToolAliasDictionary.resolveToolName(type);
+            const matchedTool = this.tools.find(t => t.name.toLowerCase() === canonicalName.toLowerCase());
+            if (matchedTool) {
+                const args = { ...parsed };
+                delete args.type;
+                delete args.action;
+                delete args.tool;
+                delete args.name;
+                delete args.function;
+
+                const normalizedArgs = ToolAliasDictionary.normalizeArgs(args);
+
+                let query = `Executing ${matchedTool.name}`;
+                if (normalizedArgs.path) query = `${matchedTool.name}: ${Array.isArray(normalizedArgs.path) ? normalizedArgs.path.join(', ') : normalizedArgs.path}`;
+                else if (normalizedArgs.paths) query = `${matchedTool.name}: ${Array.isArray(normalizedArgs.paths) ? normalizedArgs.paths.join(', ') : normalizedArgs.paths}`;
+                else if (normalizedArgs.command) query = `${matchedTool.name}: ${normalizedArgs.command}`;
+                else if (normalizedArgs.query) query = `${matchedTool.name}: ${normalizedArgs.query}`;
+                else if (normalizedArgs.url) query = `${matchedTool.name}: ${normalizedArgs.url}`;
+                else if (normalizedArgs.question) query = `${matchedTool.name}: ${normalizedArgs.question}`;
+
+                return { name: matchedTool.name, args: normalizedArgs, query };
+            }
+        }
+
         return null;
     }
 
@@ -600,7 +611,8 @@ export class AgentExecutor {
         let result = await matchedTool.execute(args, {
             workspacePath: this.workspacePath,
             extensionPath: this.extensionPath,
-            turnId: turnId
+            turnId: turnId,
+            hostServices: this.hostServices
         });
         const absoluteMaxBytes = 10000;
         if (Buffer.byteLength(result, 'utf8') > absoluteMaxBytes) {

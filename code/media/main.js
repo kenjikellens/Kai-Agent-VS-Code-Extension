@@ -334,6 +334,17 @@
             chatUIController.resetAssistantStream();
         };
 
+        
+        ipcBridge.on('ask_user_request', (message) => {
+            chatUIController.renderAskUserDock(message, (answer) => {
+                ipcBridge.postMessage({
+                    type: 'ask_user_response',
+                    requestId: message.requestId,
+                    answer: answer
+                });
+            });
+        });
+
         ipcBridge.on('reply', handleReply);
         ipcBridge.on('replyComplete', handleReply);
 

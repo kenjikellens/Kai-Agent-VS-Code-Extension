@@ -4,11 +4,11 @@ import { FileReplacementHelper, ReplacementChunk } from './FileReplacementHelper
 import { TurnSnapshotManager } from '../services/TurnSnapshotManager';
 
 /**
- * Tool for replacing multiple non-contiguous blocks of lines in a file.
+ * Tool for replacing multiple non-contiguous blocks of lines in a file with atomic multi-chunk commit.
  */
 export class MultiReplaceFileContentTool extends Tool {
     public readonly name = 'multi_replace_file_content';
-    public readonly description = 'Replaces multiple non-contiguous blocks of lines in a single file in one pass.';
+    public readonly description = 'Replaces multiple non-contiguous blocks of lines in a single file in one pass with atomic verification.';
 
     public getFunctionDeclaration(): FunctionDeclaration {
         return {
@@ -33,7 +33,9 @@ export class MultiReplaceFileContentTool extends Tool {
                                 },
                                 required: ['startLine', 'endLine', 'targetContent', 'replacementContent']
                             }
-                        }
+                        },
+                        autoRelocate: { type: 'boolean', description: 'Whether to auto-detect targets if lines shifted by +/- 15 lines (default true).' },
+                        whitespaceTolerant: { type: 'boolean', description: 'Whether to allow minor indentation differences (default true).' }
                     },
                     required: ['path', 'chunks']
                 }
@@ -42,14 +44,19 @@ export class MultiReplaceFileContentTool extends Tool {
     }
 
     /**
-     * Executes multiple non-contiguous replacements within a file.
-     * Applies changes in descending order of startLine to maintain correct line number references.
-     * @param args Arguments containing path and chunks array.
+     * Executes multiple non-contiguous replacements within a file transactionally.
+     * Aborts without writing to disk if any chunk fails validation, and applies validated chunks in descending order.
+     * @param args Arguments containing path, chunks array, and drift options.
      * @param context The current execution context containing the workspace path.
-     * @returns A status message indicating success or an error details.
+     * @returns A status message indicating success with chunk counts and notices or an error message.
      */
     public async execute(
-        args: { path: string; chunks: ReplacementChunk[] },
+        args: {
+            path: string;
+            chunks: ReplacementChunk[];
+            autoRelocate?: boolean;
+            whitespaceTolerant?: boolean;
+        },
         context: ToolContext
     ): Promise<string> {
         const targetPath = resolveSafePath(args.path, context.workspacePath);
@@ -62,17 +69,27 @@ export class MultiReplaceFileContentTool extends Tool {
         }
 
         const content = await fs.promises.readFile(targetPath, 'utf8');
-        const lines = content.split(/\r?\n/);
 
-        const error = FileReplacementHelper.applyChunks(lines, args.chunks, args.path);
-        if (error) {
-            return error;
+        const result = FileReplacementHelper.applyChunksTransactional(
+            content,
+            args.chunks,
+            args.path,
+            {
+                autoRelocate: args.autoRelocate,
+                whitespaceTolerant: args.whitespaceTolerant
+            }
+        );
+
+        if (!result.success || result.content === undefined) {
+            return result.error || 'Failed to replace chunks transactionally.';
         }
 
         const turnId = context.turnId || 'default';
         await TurnSnapshotManager.getInstance().recordBeforeMutation(turnId, targetPath);
 
-        await fs.promises.writeFile(targetPath, lines.join('\n'), 'utf8');
-        return `Successfully updated file: ${args.path} (${args.chunks.length} chunks applied)`;
+        await fs.promises.writeFile(targetPath, result.content, 'utf8');
+
+        const noticeSuffix = result.notices.length > 0 ? `\n${result.notices.join('\n')}` : '';
+        return `Successfully updated file: ${args.path} (${args.chunks.length} chunks applied transactionally)${noticeSuffix}`;
     }
 }
