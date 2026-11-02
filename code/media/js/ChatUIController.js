@@ -1043,6 +1043,9 @@ class ChatUIController {
             case 'uuid_random':
                 verb = state === 'start' ? 'generating' : (state === 'success' ? 'generated' : 'failed generating');
                 break;
+            case 'ask_user':
+                verb = state === 'start' ? 'asking a question' : (state === 'success' ? 'question answered' : 'cancelled question');
+                break;
             default:
                 verb = state === 'start' ? 'running' : (state === 'success' ? 'completed' : 'failed');
         }
@@ -1343,6 +1346,23 @@ class ChatUIController {
 
             this.closeAskUserDock();
 
+            // 1. Visually render as an authentic User Message Bubble in the chat
+            this.appendMessage('user', finalAnswer);
+
+            // 2. Persist to AppState messages and uiEvents for conversation history & multi-turn memory
+            const state = this.appState || (typeof window !== 'undefined' ? window.appState : null);
+            if (state) {
+                state.addMessage({ role: 'user', content: finalAnswer });
+                state.addUiEvent({ type: 'user', content: finalAnswer });
+            }
+
+            // 3. Save current chat session immediately
+            if (typeof this.saveCurrentChat === 'function') {
+                this.saveCurrentChat();
+            } else if (typeof window !== 'undefined' && typeof window.saveCurrentChat === 'function') {
+                window.saveCurrentChat();
+            }
+
             if (typeof onAnswer === 'function') {
                 onAnswer(finalAnswer);
             }
@@ -1372,51 +1392,17 @@ class ChatUIController {
                 item.addEventListener('click', (e) => {
                     e.preventDefault();
                     e.stopPropagation();
-                    resolveAnswer(opt);
+                    const chosenText = /^\d+\.\s*/.test(opt) ? opt : `${idx + 1}. ${opt}`;
+                    resolveAnswer(chosenText);
                 });
                 optionsList.appendChild(item);
             });
             dock.appendChild(optionsList);
         }
 
-        // 3. Footer with custom text input and Skip button
+        // 3. Footer with Skip button only (unified input is the main bottom message-input)
         const footer = document.createElement('div');
         footer.className = 'ask-dock-footer';
-
-        const customWrap = document.createElement('div');
-        customWrap.className = 'ask-custom-input-wrap';
-
-        const pencilSvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-        pencilSvg.setAttribute('class', 'ask-custom-icon');
-        pencilSvg.setAttribute('width', '13');
-        pencilSvg.setAttribute('height', '13');
-        pencilSvg.setAttribute('viewBox', '0 0 24 24');
-        pencilSvg.setAttribute('fill', 'none');
-        pencilSvg.setAttribute('stroke', 'currentColor');
-        pencilSvg.setAttribute('stroke-width', '2');
-        pencilSvg.setAttribute('stroke-linecap', 'round');
-        pencilSvg.setAttribute('stroke-linejoin', 'round');
-        pencilSvg.innerHTML = '<path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>';
-
-        const customInput = document.createElement('input');
-        customInput.type = 'text';
-        customInput.className = 'ask-custom-input';
-        customInput.placeholder = i18n.askUserCustomPlaceholder || 'Something else...';
-
-        customInput.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter') {
-                e.preventDefault();
-                e.stopPropagation();
-                const val = (customInput.value || '').trim();
-                if (val) {
-                    resolveAnswer(val);
-                }
-            }
-        });
-
-        customWrap.appendChild(pencilSvg);
-        customWrap.appendChild(customInput);
-        footer.appendChild(customWrap);
 
         const skipBtn = document.createElement('button');
         skipBtn.type = 'button';
@@ -1467,7 +1453,9 @@ class ChatUIController {
                 const num = parseInt(e.key, 10);
                 if (Array.isArray(req.options) && num <= req.options.length) {
                     e.preventDefault();
-                    resolveAnswer(req.options[num - 1]);
+                    const opt = req.options[num - 1];
+                    const chosenText = /^\d+\.\s*/.test(opt) ? opt : `${num}. ${opt}`;
+                    resolveAnswer(chosenText);
                 }
             } else if (e.key === 'Escape') {
                 e.preventDefault();
@@ -1488,7 +1476,7 @@ class ChatUIController {
             this.messageInput.placeholder = i18n.askUserCustomPlaceholder || 'Please choose one of the options above';
         } else {
             this.messageInput.disabled = false;
-            this.messageInput.placeholder = i18n.placeholderChat || 'Type custom response... (or select an option above)';
+            this.messageInput.placeholder = i18n.askUserCustomPlaceholder || 'Something else... (type here or choose an option above)';
             this.messageInput.addEventListener('keydown', handleKeydown, true);
         }
 

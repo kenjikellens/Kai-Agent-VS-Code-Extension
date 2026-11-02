@@ -5,7 +5,7 @@ import { Tool, ToolContext, FunctionDeclaration } from './Tool';
  */
 export class AskUserTool extends Tool {
     public readonly name = 'ask_user';
-    public readonly description = 'Suspends autonomous execution to ask the developer a structured question with optional multiple-choice options, resuming once the user responds.';
+    public readonly description = 'Asks the user a question with interactive clickable option buttons or multiple-choice answers (essential for games like Akinator, quizzes, branching decisions, task selection, or user preferences). Execution suspends and resumes once the user selects an option or submits custom input.';
 
     public getFunctionDeclaration(): FunctionDeclaration {
         return {

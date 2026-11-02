@@ -265,24 +265,30 @@ When implementing or modifying completions across providers, dynamically apply t
 
 - **Standalone Card Elevation & Docking**:
   - The clarification prompt and question selection interface (`#ask-user-dock`) is mounted directly above `.input-card` within `.input-panel` rather than being nested awkwardly inside the input box.
-  - Eliminates conflicting textarea focus outlines and maintains a clean floating card elevation.
+  - Eliminates conflicting textarea focus outlines and maintains a clean floating card elevation using standardized design tokens (`var(--app-input-bg)`, `var(--app-input-border)`).
 - **Vertical Numbered Option List**:
   - Suggested choices are rendered as full-width vertical action rows (`.ask-option-item`) with subtle dividers (`border-top: 1px solid var(--app-border-subtle)`).
   - Each item features a distinct rounded number badge (`.ask-option-badge`, `1`..`9`) and clean typography (`.ask-option-label`).
+- **Single Unified Input & Conversational Flow**:
+  - Eliminates duplicate stacked inputs: the main bottom input (`#message-input`) serves as the single unified input for custom responses with dynamic placeholder (`askUserCustomPlaceholder`), while the dock footer contains exclusively the right-aligned skip button (`.ask-skip-btn`).
+  - Upon selecting an option or submitting custom text, the chosen answer is rendered immediately as an authentic `.user-message-bubble` in the chat, keeping the visual transcript conversational.
+  - While pending, the standardized tool status row (`.tool-status-row.in-progress`) displays `"asking a question..."` with spinner and the target question text.
+  - Full intermediate turn history is preserved in `appState.messages` and `fullHistory`, ensuring multi-turn context (e.g. Akinator rounds) is retained when retrying or editing turns.
 - **Footer Controls & Keyboard Navigation**:
-  - The footer includes a dedicated custom response input (`.ask-custom-input-wrap` with pencil icon) and a pill-styled skip button (`.ask-skip-btn`).
-  - Supports instant keyboard number navigation (`1`..`9`), `Escape` for dismissal, and `Enter` for submitting custom responses.
+  - The footer includes a pill-styled skip button (`.ask-skip-btn`).
+  - Supports instant keyboard number navigation (`1`..`9`), `Escape` for dismissal, and `Enter` on the main input for submitting custom responses.
   - Strict i18n parity (`askUserSkip`, `askUserCustomPlaceholder`) maintained across all 18 languages.
 
 ---
 
-## 23. Direct Tool Invocation & Professional System Prompt Contracts
+## 23. Direct Tool Invocation & Interactive Prompt Protocol
 
 - **Immediate Tool Execution (No Preambles)**:
-  - In all prompt variants (`ask`, `agent`, `planning`), models are mandated to emit tool calls immediately inside `<|tool_call|>` without conversational filler, preambles, or announcements ("Let me check...", "I will inspect the file...").
-- **Professional `ask_user` Protocol**:
-  - The interactive `ask_user` tool is strictly reserved for genuine, blocking architectural decisions or branching design choices requiring human input.
-  - Never trigger `ask_user` for routine explanations, progress confirmations, or unprompted test queries.
+  - In all prompt variants (`ask`, `agent`, `planning`, `chat`), models are mandated to emit tool calls immediately inside `<|tool_call|>` without conversational filler, preambles, or announcements ("Let me check...", "I will inspect the file...").
+- **Interactive Question & Multiple-Choice Mandate (`ask_user`)**:
+  - Whenever the model asks the user a question with choices, predefined options, or possible answers (such as Akinator, games, quizzes, branching decisions, task selection, or user preferences), it **MUST ALWAYS** invoke `ask_user` with an array of options.
+  - Never dump option lists or choices in plain text markdown when `ask_user` is available, ensuring the user always receives interactive clickable buttons and unified input.
+  - For non-interactive answers, simple greetings, or progress reports, reply in plain text without invoking `ask_user`.
 - **Strict Mode Separation**:
   - **Ask / Chat Mode**: Pure read-only codebase and external research. File modifications and command execution are strictly barred.
   - **Planning Mode**: Two-phase architecture. Phase 1 conducts direct, read-only research and outputs `<implementation_plan title="...">` with proposed diffs and verification steps; zero code modifications are permitted before explicit user approval.

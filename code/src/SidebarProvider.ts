@@ -323,7 +323,8 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
                 type: 'reply',
                 content: result.reply,
                 modifiedFiles: result.modifiedFiles,
-                tokensPerSecond: result.tokensPerSecond
+                tokensPerSecond: result.tokensPerSecond,
+                fullHistory: result.messages
             });
         } catch (error: any) {
             // Re-throw if error was generated from manual abort cancellation

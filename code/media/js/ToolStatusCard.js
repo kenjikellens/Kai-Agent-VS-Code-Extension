@@ -56,6 +56,7 @@ class ToolStatusCard {
         else if (tool === 'list_dir') name = i18n.toolListing || 'Listing';
         else if (tool === 'run_command') name = i18n.toolExecuting || 'Executing';
         else if (tool === 'web_search' || tool === 'search_web') name = i18n.toolSearchingWeb || 'Searching web';
+        else if (tool === 'ask_user') name = i18n.toolAskingUser || (state === 'running' ? 'Asking a question...' : 'Question answered');
 
         const safeFile = fileName ? (typeof DOMUtils !== 'undefined' ? DOMUtils.escapeHtml(fileName) : fileName) : '';
         return `

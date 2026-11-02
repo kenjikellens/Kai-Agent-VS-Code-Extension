@@ -4166,51 +4166,14 @@ details[open]>summary>.custom-chevron {
   word-break: break-word;
 }
 
-/* [Ask User Dock Footer] - Bottom bar with custom text input and skip button */
+/* [Ask User Dock Footer] - Bottom bar with skip button */
 .ask-dock-footer {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-end;
   gap: 10px;
   padding: 8px 14px;
   border-top: 1px solid var(--app-border-subtle);
-}
-
-/* [Ask Custom Input Wrap] - Container with icon and custom text field */
-.ask-custom-input-wrap {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex: 1;
-  background: var(--app-surface);
-  border: 1px solid var(--app-border);
-  border-radius: var(--app-radius-md, 6px);
-  padding: 5px 8px;
-  transition: border-color 0.15s ease, box-shadow 0.15s ease;
-}
-
-.ask-custom-input-wrap:focus-within {
-  border-color: var(--app-focus);
-  box-shadow: 0 0 0 1px var(--app-focus);
-}
-
-.ask-custom-icon {
-  color: var(--app-muted);
-  flex-shrink: 0;
-}
-
-.ask-custom-input {
-  flex: 1;
-  background: transparent;
-  border: none;
-  outline: none;
-  font-size: 12.5px;
-  color: var(--app-fg);
-  padding: 0;
-}
-
-.ask-custom-input::placeholder {
-  color: var(--app-muted);
 }
 
 /* [Ask Skip Button] - Secondary pill button to dismiss or skip the prompt */

@@ -641,6 +641,9 @@ export class AgentExecutor {
      * Extracts the target file basename or command name for compact UI representation.
      */
     private getToolTarget(tool: string, args: any): string {
+        if (tool === 'ask_user') {
+            return args.question || '';
+        }
         if (tool === 'web_search') {
             return args.query ? `"${args.query}"` : '';
         }

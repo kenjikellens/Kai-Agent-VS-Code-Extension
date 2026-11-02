@@ -93,22 +93,71 @@ class PromptSubmissionOrchestrator {
      * Retries the last assistant turn by popping previous assistant message and re-running.
      * @param {HTMLElement} assistantMessageElement Target DOM element to remove.
      */
+    /**
+     * Retries the assistant turn by rolling back DOM and conversation history to the preceding user turn.
+     * Supports middle-of-history retries and preserves prior multi-turn context (e.g. Akinator game rounds).
+     * @param {HTMLElement} assistantMessageElement Target DOM element to remove.
+     */
     async retryLastTurn(assistantMessageElement) {
         if (this.appState.isWaitingForResponse) return;
 
-        const lastUserMsg = [...this.appState.messages].reverse().find(m => m.role === 'user');
-        if (!lastUserMsg) return;
-
+        // 1. If an assistantMessageElement is provided, remove all following sibling elements in the chat container
         if (assistantMessageElement) {
+            while (assistantMessageElement.nextElementSibling) {
+                assistantMessageElement.nextElementSibling.remove();
+            }
             assistantMessageElement.remove();
         }
 
-        if (this.appState.messages.length > 0 && this.appState.messages[this.appState.messages.length - 1].role === 'assistant') {
-            this.appState.messages.pop();
+        // 2. Identify remaining assistant count in DOM to accurately truncate history
+        if (this.chatUIController.chatContainer) {
+            const allAssistantRows = Array.from(this.chatUIController.chatContainer.querySelectorAll('.assistant-message'));
+            const remainingAssistantsCount = allAssistantRows.length;
+
+            let assistantCount = 0;
+            let cutIndex = -1;
+            for (let i = 0; i < this.appState.messages.length; i++) {
+                if (this.appState.messages[i].role === 'assistant') {
+                    if (assistantCount === remainingAssistantsCount) {
+                        cutIndex = i;
+                        break;
+                    }
+                    assistantCount++;
+                }
+            }
+            if (cutIndex !== -1) {
+                this.appState.messages = this.appState.messages.slice(0, cutIndex);
+            } else if (this.appState.messages.length > 0 && this.appState.messages[this.appState.messages.length - 1].role === 'assistant') {
+                this.appState.messages.pop();
+            }
+
+            let assistantEventCount = 0;
+            let cutEventIndex = -1;
+            for (let i = 0; i < this.appState.uiEvents.length; i++) {
+                if (this.appState.uiEvents[i].type === 'assistant') {
+                    if (assistantEventCount === remainingAssistantsCount) {
+                        cutEventIndex = i;
+                        break;
+                    }
+                    assistantEventCount++;
+                }
+            }
+            if (cutEventIndex !== -1) {
+                this.appState.uiEvents = this.appState.uiEvents.slice(0, cutEventIndex);
+            } else if (this.appState.uiEvents.length > 0 && this.appState.uiEvents[this.appState.uiEvents.length - 1].type === 'assistant') {
+                this.appState.uiEvents.pop();
+            }
+        } else {
+            if (this.appState.messages.length > 0 && this.appState.messages[this.appState.messages.length - 1].role === 'assistant') {
+                this.appState.messages.pop();
+            }
+            if (this.appState.uiEvents.length > 0 && this.appState.uiEvents[this.appState.uiEvents.length - 1].type === 'assistant') {
+                this.appState.uiEvents.pop();
+            }
         }
-        if (this.appState.uiEvents.length > 0 && this.appState.uiEvents[this.appState.uiEvents.length - 1].type === 'assistant') {
-            this.appState.uiEvents.pop();
-        }
+
+        const lastUserMsg = [...this.appState.messages].reverse().find(m => m.role === 'user');
+        if (!lastUserMsg) return;
 
         this.chatUIController.resetAssistantStream();
         this.chatUIController.setUiLoading(true, this.appState);

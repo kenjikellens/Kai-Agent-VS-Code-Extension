@@ -105,6 +105,10 @@
             const details = modelDropdownController.getSelectedModelDetails();
             sessionRepository.saveSession(appState.toChatPayload(details.thinking));
         }
+        window.appState = appState;
+        window.saveCurrentChat = saveCurrentChat;
+        chatUIController.saveCurrentChat = saveCurrentChat;
+        chatUIController.appState = appState;
 
         /**
          * Sends user prompt input to extension host or aborts ongoing generation.
