@@ -117,3 +117,11 @@ Whenever architecture, UI components, runtime features, or system design guideli
     - **Mode Menu Gating**: When no workspace folder is active (`hasActiveWorkspace === false`), the mode dropdown selector container is strictly hidden via `.hidden` (`display: none`).
     - **Lock to Ask Mode**: With no workspace active, operational mode is locked to `ask` (`activeMode = 'ask'`), ensuring safe, read-only conversational interactions with utility, web search, and user clarification tools without workspace code mutation.
     - **Workspace State Sync**: `WorkspaceManager` starts with an empty directory (`''`) instead of auto-binding `process.cwd()`, and chat sessions synchronize workspace presence bidirectionally with the backend and local storage via the `setWorkspace` IPC message.
+
+15. **Direct Tool Invocation & Professional System Prompt Contracts**:
+    - **Immediate Tool Execution Mandate**: In all system prompt variants (`ask`, `agent`, `planning`), models are strictly instructed to emit tool calls directly within `<|tool_call|>` without conversational preambles ("Let me check...", "I will inspect..."), eliminating hesitation and narrative filler.
+    - **Refined `ask_user` Protocol**: Interactive clarification is strictly scoped to genuine, blocking architectural decisions or branching design requirements where human input is indispensable. Routine answers and unprompted confirmations never trigger `ask_user`.
+    - **Mode Separation Contracts**:
+      - **Ask Mode**: Authoritative, read-only code intelligence and external documentation lookup. File modification is strictly barred.
+      - **Planning Mode**: Two-phase architecture. Phase 1 conducts read-only research and outputs `<implementation_plan title="...">` with proposed diffs and verification steps; zero code modifications are permitted before explicit user approval.
+      - **Agent Mode**: Autonomous execution, root-cause investigation, and surgical diff editing (`replace_file_content` / `multi_replace_file_content` for existing files, `write_file` for new files).

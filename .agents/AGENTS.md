@@ -274,6 +274,20 @@ When implementing or modifying completions across providers, dynamically apply t
   - Supports instant keyboard number navigation (`1`..`9`), `Escape` for dismissal, and `Enter` for submitting custom responses.
   - Strict i18n parity (`askUserSkip`, `askUserCustomPlaceholder`) maintained across all 18 languages.
 
+---
+
+## 23. Direct Tool Invocation & Professional System Prompt Contracts
+
+- **Immediate Tool Execution (No Preambles)**:
+  - In all prompt variants (`ask`, `agent`, `planning`), models are mandated to emit tool calls immediately inside `<|tool_call|>` without conversational filler, preambles, or announcements ("Let me check...", "I will inspect the file...").
+- **Professional `ask_user` Protocol**:
+  - The interactive `ask_user` tool is strictly reserved for genuine, blocking architectural decisions or branching design choices requiring human input.
+  - Never trigger `ask_user` for routine explanations, progress confirmations, or unprompted test queries.
+- **Strict Mode Separation**:
+  - **Ask / Chat Mode**: Pure read-only codebase and external research. File modifications and command execution are strictly barred.
+  - **Planning Mode**: Two-phase architecture. Phase 1 conducts direct, read-only research and outputs `<implementation_plan title="...">` with proposed diffs and verification steps; zero code modifications are permitted before explicit user approval.
+  - **Agent Mode**: Autonomous execution, root-cause investigation, and surgical diff editing (`replace_file_content` / `multi_replace_file_content` for existing files, `write_file` for new files).
+
 
 
 
