@@ -238,7 +238,7 @@ When implementing or modifying completions across providers, dynamically apply t
   - `ChatUIController.js` batches scroll operations in RAF (`_scrollRafId`), decoupling layout dimension queries from DOM mutations to eliminate forced synchronous reflows.
 - **Deep Cloning & Session Memory Caching**:
   - Native `structuredClone` with JSON fallback in `AppState.deepClone()` accelerates message and session state duplication.
-  - `SessionRepository.js` utilizes an in-memory session cache (`_sessionsCache`) to avoid repetitive JSON parsing from localStorage on read operations.
+  - `SessionRepository.js` utilizes an in-memory session cache (`_sessionsCache`), serving session queries instantly without JSON disk parsing.
 - **Central Event Delegation & Static Fast-Path Preview**:
   - `HistoryManager.js` uses centralized event delegation on `this.historyList` instead of attaching per-item click listeners across history records.
   - `preview_server.js` restricts dynamic module reloading strictly to `/api/*` endpoints, keeping static asset delivery instantaneous.
@@ -269,15 +269,16 @@ When implementing or modifying completions across providers, dynamically apply t
 - **Vertical Numbered Option List**:
   - Suggested choices are rendered as full-width vertical action rows (`.ask-option-item`) with subtle dividers (`border-top: 1px solid var(--app-border-subtle)`).
   - Each item features a distinct rounded number badge (`.ask-option-badge`, `1`..`9`) and clean typography (`.ask-option-label`).
-- **Single Unified Input & Conversational Flow**:
+- **Single Unified Input & Natural Conversational Flow**:
   - Eliminates duplicate stacked inputs: the main bottom input (`#message-input`) serves as the single unified input for custom responses with dynamic placeholder (`askUserCustomPlaceholder`), while the dock footer contains exclusively the right-aligned skip button (`.ask-skip-btn`).
-  - Upon selecting an option or submitting custom text, the chosen answer is rendered immediately as an authentic `.user-message-bubble` in the chat, keeping the visual transcript conversational.
-  - While pending, the standardized tool status row (`.tool-status-row.in-progress`) displays `"asking a question..."` with spinner and the target question text.
+  - Zero `.tool-status-row` entries: `ask_user` never renders a technical tool-status row or wrench pill in the chat. Instead, the question is rendered directly as authentic Assistant message text, accompanied by a subtle activity loader (`asking a question...`) while awaiting user response.
+  - Upon selecting an option or submitting custom text, the chosen answer is rendered immediately as an authentic `.user-message-bubble`, keeping the visual transcript conversational.
+  - Upon dismissal (`×` or `Escape`), a user bubble stating `"User did not answer"` is appended, preserving conversational flow and informing the assistant.
   - Full intermediate turn history is preserved in `appState.messages` and `fullHistory`, ensuring multi-turn context (e.g. Akinator rounds) is retained when retrying or editing turns.
 - **Footer Controls & Keyboard Navigation**:
   - The footer includes a pill-styled skip button (`.ask-skip-btn`).
   - Supports instant keyboard number navigation (`1`..`9`), `Escape` for dismissal, and `Enter` on the main input for submitting custom responses.
-  - Strict i18n parity (`askUserSkip`, `askUserCustomPlaceholder`) maintained across all 18 languages.
+  - Strict i18n parity (`askUserSkip`, `askUserCustomPlaceholder`, `askUserNoAnswer`, `toolAskingUser`) maintained across all 18 languages.
 
 ---
 
@@ -294,13 +295,14 @@ When implementing or modifying completions across providers, dynamically apply t
   - **Planning Mode**: Two-phase architecture. Phase 1 conducts direct, read-only research and outputs `<implementation_plan title="...">` with proposed diffs and verification steps; zero code modifications are permitted before explicit user approval.
   - **Agent Mode**: Autonomous execution, root-cause investigation, and surgical diff editing (`replace_file_content` / `multi_replace_file_content` for existing files, `write_file` for new files).
 
+---
 
+## 24. Diagnostic Error Logging & Output Channel Architecture
 
-
-
-
-
-
-
-
-
+- **VS Code Output Channel (`KAI Agent`)**:
+  - The VS Code Extension initializes and routes all diagnostic logs, tool lifecycle traces, and errors to a dedicated Output Channel (`vscode.window.createOutputChannel('KAI Agent')`) managed by `Logger.ts`.
+  - All tool execution failures and uncaught bridge rejections are appended with timestamps and stack traces to ensure visible diagnostics in the IDE Output panel (`View > Output`).
+- **DevTools & Console Diagnostics**:
+  - Webview bridges and browser preview engines forward runtime exceptions and unhandled promise rejections to `console.error` with distinct prefixes (`[KAI Tool Error]`, `[KAI Webview Global Error]`), ensuring immediate visibility in browser / Electron DevTools (`F12`).
+- **UI Error Visibility**:
+  - Tool execution failures (including `ask_user` errors) are surfaced directly as red system messages (`.system-message`) in the chat container so errors are immediately noticeable without opening developer consoles.

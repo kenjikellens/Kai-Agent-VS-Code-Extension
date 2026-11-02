@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 import { SidebarProvider } from './SidebarProvider';
 import { InlineEditHandler } from './InlineEditHandler';
+import { Logger } from './services/Logger';
 
 /**
  * Entry point activation hook for the extension.
@@ -8,6 +9,9 @@ import { InlineEditHandler } from './InlineEditHandler';
  * @param context VS Code extension context providing subscription storage and files path.
  */
 export function activate(context: vscode.ExtensionContext) {
+    const channel = Logger.initialize();
+    context.subscriptions.push(channel);
+    Logger.info('KAI Agent extension activated successfully.');
     // Instantiate our custom WebviewView sidebar provider with the extension context
     const sidebarProvider = new SidebarProvider(context);
 
@@ -55,4 +59,6 @@ export function activate(context: vscode.ExtensionContext) {
  * Entry point deactivation hook for the extension.
  * Executed when the extension is shut down or disabled by the IDE.
  */
-export function deactivate() {}
+export function deactivate() {
+    Logger.dispose();
+}

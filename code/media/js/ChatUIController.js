@@ -266,7 +266,7 @@ class ChatUIController {
                         if (contentEl) {
                             const isRaw = assistantMsg.classList.toggle('show-raw-mode');
                             rawToggleBtn.classList.toggle('active', isRaw);
-                            const rawText = assistantMsg.dataset.rawContent || '';
+                            const rawText = assistantMsg.dataset.rawContent || (contentEl ? contentEl.innerText : '') || '';
                             if (isRaw) {
                                 contentEl.dataset.formattedHtml = contentEl.innerHTML;
                                 const existingThinking = contentEl.querySelector('.thinking-block');
@@ -611,7 +611,7 @@ class ChatUIController {
         const rawSvg = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>';
         const infoSvg = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>';
 
-        const rawModelName = meta.model || (this.settingsController ? this.settingsController.getSelectedModel() : '') || localStorage.getItem('kai.selectedModel') || 'Local Model';
+        const rawModelName = meta.model || (this.modelDropdownController?.getSelectedModel?.()) || (this.settingsController?.getSelectedModel?.()) || localStorage.getItem('kai.selectedModel') || 'Local Model';
         const displayModelName = this.formatter.formatModelName(rawModelName);
         const effectiveMode = mode || meta.mode || 'agent';
         const modeLabel = effectiveMode === 'planning' ? 'Plan' : (effectiveMode.charAt(0).toUpperCase() + effectiveMode.slice(1));
@@ -838,6 +838,43 @@ class ChatUIController {
             }
             this.removeActivityStatus();
             appState.finalizeAssistantUiEvent();
+
+            if (progress.tool === 'ask_user') {
+                const i18n = (typeof window !== 'undefined' && window.KAI_I18N) || {};
+                const questionText = progress.fileName || progress.query || '';
+                if (this.currentAssistantMsgElement) {
+                    const contentEl = this.currentAssistantMsgElement.querySelector('.message-content');
+                    if (contentEl) {
+                        const baseText = (this.currentAssistantText || '')
+                            .replace(/<\|?(?:tool_call|tool|execute_plan|action)\|?>[\s\S]*?(?:<\|?\/(?:tool_call|tool|execute_plan|action)\|?>|<\|?(?:tool_call|tool|execute_plan|action)\|?>|$)/gi, '')
+                            .replace(/<\|?tool[\s\S]*$/gi, '')
+                            .replace(/<\|?\/tool[\s\S]*$/gi, '')
+                            .replace(/<\|[\s\S]*$/gi, '')
+                            .trim();
+                        let fullText = baseText;
+                        const normBase = baseText.replace(/\s+/g, ' ').trim().toLowerCase();
+                        const normQ = questionText.replace(/\s+/g, ' ').trim().toLowerCase();
+                        if (normQ && !normBase.includes(normQ)) {
+                            fullText = baseText ? `${baseText}\n\n${questionText}` : questionText;
+                        }
+                        this.currentAssistantText = fullText;
+                        this.currentAssistantMsgElement.dataset.rawContent = fullText;
+                        contentEl.innerHTML = this.formatter.formatMarkdown(fullText);
+                        appState.updateOrAddAssistantUiEvent(fullText);
+                        if (!this.currentAssistantMsgElement.querySelector('.message-actions')) {
+                            this.currentAssistantMsgElement.appendChild(this.createAssistantActionBar(this.currentAssistantMsgElement.dataset.mode || 'agent'));
+                        }
+                    }
+                } else if (questionText) {
+                    this.appendMessage('assistant', questionText);
+                    appState.addUiEvent({ type: 'assistant', content: questionText });
+                    appState.addMessage({ role: 'assistant', content: questionText });
+                }
+                this.resetAssistantStream();
+                this.showActivityStatus(i18n.toolAskingUser || 'asking a question...');
+                return;
+            }
+
             if (this.currentAssistantMsgElement) {
                 const contentEl = this.currentAssistantMsgElement.querySelector('.message-content');
                 if (contentEl) {
@@ -884,7 +921,15 @@ class ChatUIController {
                 }
             }
         } else if (progress.progressType === 'tool_end') {
-        } else if (progress.progressType === 'tool_end') {
+            if (progress.tool === 'ask_user') {
+                this.removeActivityStatus();
+                if (progress.output && (progress.output.startsWith('[Error') || progress.output.startsWith('[ask_user error'))) {
+                    const errMsg = progress.output;
+                    appState.addUiEvent({ type: 'system', content: errMsg });
+                    this.appendMessage('system', errMsg);
+                }
+                return;
+            }
             const isError = progress.output && (
                 progress.output.startsWith('[Error') || 
                 progress.output.startsWith('[Execution Cancelled]')
@@ -1224,6 +1269,7 @@ class ChatUIController {
             } else if (evt.type === 'file-summary' || evt.role === 'file-summary') {
                 this.appendMessage('file-summary', typeof evt.files === 'string' ? evt.files : JSON.stringify(evt.files || evt.content || []));
             } else if (evt.type === 'tool') {
+                if (evt.tool === 'ask_user') return;
                 const statusDiv = document.createElement('div');
                 if (evt.toolId) statusDiv.id = evt.toolId;
                 statusDiv.className = `tool-status-row ${evt.state === 'error' ? 'errored' : (evt.state === 'success' ? 'completed' : 'in-progress')}`;
@@ -1308,10 +1354,67 @@ class ChatUIController {
         if (!inputCard || !this.messageInput) return;
 
         const i18n = (typeof window !== 'undefined' && window.KAI_I18N) || {};
+
+        // Ensure the question text is displayed as an assistant message bubble in the chat
+        if (req.question) {
+            const normQ = req.question.replace(/\s+/g, ' ').trim().toLowerCase();
+            const lastAssistantMsg = this.currentAssistantMsgElement ||
+                (this.chatContainer ? this.chatContainer.querySelector('.message.assistant-message:last-of-type') : null);
+
+            if (lastAssistantMsg) {
+                const contentEl = lastAssistantMsg.querySelector('.message-content');
+                const rawContent = (lastAssistantMsg.dataset.rawContent || (contentEl ? contentEl.innerText : '') || '').replace(/\s+/g, ' ').toLowerCase();
+                if (!rawContent.includes(normQ)) {
+                    const base = (lastAssistantMsg.dataset.rawContent || this.currentAssistantText || '').trim();
+                    const full = base ? `${base}\n\n${req.question}` : req.question;
+                    lastAssistantMsg.dataset.rawContent = full;
+                    if (contentEl) {
+                        contentEl.innerHTML = this.formatter.formatMarkdown(full);
+                    }
+                    const state = this.appState || (typeof window !== 'undefined' ? window.appState : null);
+                    if (state) state.updateOrAddAssistantUiEvent(full);
+                } else {
+                    if (!lastAssistantMsg.dataset.rawContent && this.currentAssistantText) {
+                        lastAssistantMsg.dataset.rawContent = this.currentAssistantText;
+                    }
+                }
+                if (!lastAssistantMsg.querySelector('.message-actions')) {
+                    lastAssistantMsg.appendChild(this.createAssistantActionBar(lastAssistantMsg.dataset.mode || 'agent'));
+                }
+            } else {
+                this.appendMessage('assistant', req.question);
+                const state = this.appState || (typeof window !== 'undefined' ? window.appState : null);
+                if (state) {
+                    state.addUiEvent({ type: 'assistant', content: req.question });
+                    state.addMessage({ role: 'assistant', content: req.question });
+                }
+            }
+        }
+
         const dock = document.createElement('div');
         dock.id = 'ask-user-dock';
         dock.className = 'ask-user-dock';
         dock.dataset.requestId = req.requestId || '';
+
+        const handleDismiss = () => {
+            this.closeAskUserDock();
+            this.removeActivityStatus();
+            const noAnswerText = i18n.askUserNoAnswer || 'User did not answer';
+            this.appendMessage('user', noAnswerText);
+            const state = this.appState || (typeof window !== 'undefined' ? window.appState : null);
+            if (state) {
+                state.addMessage({ role: 'user', content: noAnswerText });
+                state.addUiEvent({ type: 'user', content: noAnswerText });
+            }
+            if (typeof this.saveCurrentChat === 'function') {
+                this.saveCurrentChat();
+            } else if (typeof window !== 'undefined' && typeof window.saveCurrentChat === 'function') {
+                window.saveCurrentChat();
+            }
+            if (typeof onAnswer === 'function') {
+                onAnswer(noAnswerText);
+            }
+        };
 
         // 1. Header with Title and Close button
         const header = document.createElement('div');
@@ -1330,10 +1433,7 @@ class ChatUIController {
         closeBtn.addEventListener('click', (e) => {
             e.preventDefault();
             e.stopPropagation();
-            this.closeAskUserDock();
-            if (typeof onAnswer === 'function') {
-                onAnswer('');
-            }
+            handleDismiss();
         });
 
         header.appendChild(titleSpan);
@@ -1345,6 +1445,7 @@ class ChatUIController {
             const finalAnswer = answerText.trim();
 
             this.closeAskUserDock();
+            this.removeActivityStatus();
 
             // 1. Visually render as an authentic User Message Bubble in the chat
             this.appendMessage('user', finalAnswer);
@@ -1459,10 +1560,7 @@ class ChatUIController {
                 }
             } else if (e.key === 'Escape') {
                 e.preventDefault();
-                this.closeAskUserDock();
-                if (typeof onAnswer === 'function') {
-                    onAnswer('');
-                }
+                handleDismiss();
             }
         };
 
@@ -1499,6 +1597,7 @@ class ChatUIController {
      * Removes the dock from .input-panel / .input-card, unbinds captured event listeners, and resets input placeholders.
      */
     closeAskUserDock() {
+        this.removeActivityStatus();
         if (this._activeAskUserDock) {
             this._activeAskUserDock.remove();
             this._activeAskUserDock = null;

@@ -11,6 +11,7 @@ import { SessionStore } from './SessionStore';
 import { VSCodeHostServices, MementoSessionStorage } from './adapters/VSCodeHostServices';
 import { EditorContextProvider } from './EditorContextProvider';
 import { TurnSnapshotManager } from './services/TurnSnapshotManager';
+import { Logger } from './services/Logger';
 
 /**
  * SidebarProvider implements the vscode.WebviewViewProvider to govern the behavior,
@@ -35,9 +36,7 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
     constructor(context: vscode.ExtensionContext) {
         this._extensionUri = context.extensionUri;
         this._sessionStore = new SessionStore(new MementoSessionStorage(context.workspaceState));
-        if (!SidebarProvider._outputChannel) {
-            SidebarProvider._outputChannel = vscode.window.createOutputChannel('Kai');
-        }
+        SidebarProvider._outputChannel = Logger.initialize();
     }
 
     /**

@@ -78,6 +78,10 @@ export interface Translations {
     speed?: string;
     askUserSkip?: string;
     askUserCustomPlaceholder?: string;
+    askUserNoAnswer?: string;
+    toolAskingUser?: string;
+    toolQuestionAnswered?: string;
+    toolQuestionCancelled?: string;
 }
 
 /**

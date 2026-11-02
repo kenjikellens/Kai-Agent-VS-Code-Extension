@@ -9,6 +9,7 @@ import { EditorContextProvider, EditorContext } from './EditorContextProvider';
 import { DiagnosticsHelper } from './tools/DiagnosticsHelper';
 import { JsonRepairPipeline } from './core/JsonRepairPipeline';
 import { ToolAliasDictionary } from './core/ToolAliasDictionary';
+import { Logger } from './services/Logger';
 
 /**
  * AgentExecutor coordinates the autonomous AI agent loop.
@@ -324,9 +325,12 @@ export class AgentExecutor {
 
             // Execute the tool polymorphically
             let toolResult = '';
+            Logger.info(`Executing tool "${toolCall.name}"`, { target: targetName, query: toolCall.query });
             try {
                 toolResult = await this.executeTool(toolCall.name, toolCall.args, activeTurnId);
             } catch (err: any) {
+                Logger.error(`Tool "${toolCall.name}" execution failed: ${err.message || err}`, err);
+                console.error(`[KAI Agent Tool Error] Tool ${toolCall.name} execution failed:`, err);
                 toolResult = `[Error executing tool ${toolCall.name}]: ${err.message || err}`;
             }
 

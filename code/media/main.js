@@ -3,6 +3,28 @@
  * Instantiates and orchestrates ES6 OOP modules.
  */
 (function () {
+    // Global error diagnostic listener
+    window.addEventListener('error', (event) => {
+        const errMsg = (event.error && (event.error.stack || event.error.message)) || event.message || 'Unknown Webview Error';
+        console.error('[KAI Webview Global Error]:', errMsg, event);
+        try {
+            if (typeof acquireVsCodeApi === 'function' || (window.vscode && typeof window.vscode.postMessage === 'function')) {
+                const api = window.vscode || (typeof acquireVsCodeApi === 'function' ? acquireVsCodeApi() : null);
+                if (api) api.postMessage({ type: 'replyError', message: errMsg });
+            }
+        } catch (_) {}
+    });
+    window.addEventListener('unhandledrejection', (event) => {
+        const reason = (event.reason && (event.reason.stack || event.reason.message)) || String(event.reason);
+        console.error('[KAI Webview Unhandled Rejection]:', reason);
+        try {
+            if (typeof acquireVsCodeApi === 'function' || (window.vscode && typeof window.vscode.postMessage === 'function')) {
+                const api = window.vscode || (typeof acquireVsCodeApi === 'function' ? acquireVsCodeApi() : null);
+                if (api) api.postMessage({ type: 'replyError', message: reason });
+            }
+        } catch (_) {}
+    });
+
     try {
         // 1. Instantiate Core State and Utility Modules
         const appState = new AppState();
