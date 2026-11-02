@@ -112,3 +112,8 @@ Whenever architecture, UI components, runtime features, or system design guideli
 
 
 
+
+14. **Workspace Mode Gating & No-Workspace Ask Mode Enforcement**:
+    - **Mode Menu Gating**: When no workspace folder is active (`hasActiveWorkspace === false`), the mode dropdown selector container is strictly hidden via `.hidden` (`display: none`).
+    - **Lock to Ask Mode**: With no workspace active, operational mode is locked to `ask` (`activeMode = 'ask'`), ensuring safe, read-only conversational interactions with utility, web search, and user clarification tools without workspace code mutation.
+    - **Workspace State Sync**: `WorkspaceManager` starts with an empty directory (`''`) instead of auto-binding `process.cwd()`, and chat sessions synchronize workspace presence bidirectionally with the backend and local storage via the `setWorkspace` IPC message.

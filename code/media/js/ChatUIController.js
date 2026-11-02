@@ -1289,8 +1289,9 @@ class ChatUIController {
     }
 
     /**
-     * Docks an interactive clarification prompt inside the bottom input card directly above textarea.
-     * Intercepts input submission to resolve human-in-the-loop tool requests with chips or custom text.
+     * Docks an interactive clarification prompt above the bottom input card.
+     * Features a Claude Code-style card with numbered choices, dismiss close button,
+     * and a bottom row with custom answer input and skip pill button.
      * @param {Object} req Prompt request object containing requestId, question, options, and allowCustom.
      * @param {Function} onAnswer Callback triggered with the chosen or typed answer string.
      */
@@ -1303,60 +1304,42 @@ class ChatUIController {
         const inputCard = document.querySelector('.input-card');
         if (!inputCard || !this.messageInput) return;
 
+        const i18n = (typeof window !== 'undefined' && window.KAI_I18N) || {};
         const dock = document.createElement('div');
         dock.id = 'ask-user-dock';
         dock.className = 'ask-user-dock';
         dock.dataset.requestId = req.requestId || '';
 
+        // 1. Header with Title and Close button
         const header = document.createElement('div');
         header.className = 'ask-dock-header';
 
-        const iconSvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-        iconSvg.setAttribute('width', '15');
-        iconSvg.setAttribute('height', '15');
-        iconSvg.setAttribute('viewBox', '0 0 24 24');
-        iconSvg.setAttribute('fill', 'none');
-        iconSvg.setAttribute('stroke', 'currentColor');
-        iconSvg.setAttribute('stroke-width', '2');
-        iconSvg.setAttribute('stroke-linecap', 'round');
-        iconSvg.setAttribute('stroke-linejoin', 'round');
-        iconSvg.innerHTML = '<circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line>';
-
         const titleSpan = document.createElement('span');
         titleSpan.className = 'ask-dock-title';
-        titleSpan.textContent = req.question || 'Clarification needed:';
+        titleSpan.textContent = req.question || (i18n.welcomeTitle || 'How can I help you today?');
 
-        header.appendChild(iconSvg);
+        const closeBtn = document.createElement('button');
+        closeBtn.type = 'button';
+        closeBtn.className = 'ask-dock-close-btn';
+        closeBtn.title = i18n.close || 'Dismiss';
+        closeBtn.setAttribute('aria-label', 'Close');
+        closeBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>';
+        closeBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            this.closeAskUserDock();
+            if (typeof onAnswer === 'function') {
+                onAnswer('');
+            }
+        });
+
         header.appendChild(titleSpan);
+        header.appendChild(closeBtn);
         dock.appendChild(header);
 
         const resolveAnswer = (answerText) => {
             if (!answerText || !answerText.trim()) return;
             const finalAnswer = answerText.trim();
-
-            const confirmCard = document.createElement('div');
-            confirmCard.className = 'message system-message ask-confirmation-card';
-
-            const qSpan = document.createElement('span');
-            qSpan.className = 'ask-confirmation-q';
-            qSpan.textContent = `Clarification: ${req.question || 'Question'}`;
-
-            const arrowSpan = document.createElement('span');
-            arrowSpan.className = 'ask-confirmation-arrow';
-            arrowSpan.textContent = ' -> ';
-
-            const aSpan = document.createElement('span');
-            aSpan.className = 'ask-confirmation-a';
-            aSpan.textContent = `Selected: ${finalAnswer}`;
-
-            confirmCard.appendChild(qSpan);
-            confirmCard.appendChild(arrowSpan);
-            confirmCard.appendChild(aSpan);
-
-            if (this.chatContainer) {
-                this.chatContainer.appendChild(confirmCard);
-                this.scrollToBottom();
-            }
 
             this.closeAskUserDock();
 
@@ -1365,23 +1348,88 @@ class ChatUIController {
             }
         };
 
+        // 2. Vertical Options List (Claude Code style)
         if (Array.isArray(req.options) && req.options.length > 0) {
-            const optionsRow = document.createElement('div');
-            optionsRow.className = 'ask-options-row';
-            req.options.forEach(opt => {
-                const chip = document.createElement('button');
-                chip.type = 'button';
-                chip.className = 'ask-option-chip';
-                chip.textContent = opt;
-                chip.addEventListener('click', (e) => {
+            const optionsList = document.createElement('div');
+            optionsList.className = 'ask-options-list';
+            req.options.forEach((opt, idx) => {
+                const item = document.createElement('button');
+                item.type = 'button';
+                item.className = 'ask-option-item';
+                item.dataset.index = String(idx + 1);
+
+                const badge = document.createElement('span');
+                badge.className = 'ask-option-badge';
+                badge.textContent = String(idx + 1);
+
+                const label = document.createElement('span');
+                label.className = 'ask-option-label';
+                label.textContent = opt;
+
+                item.appendChild(badge);
+                item.appendChild(label);
+
+                item.addEventListener('click', (e) => {
                     e.preventDefault();
                     e.stopPropagation();
                     resolveAnswer(opt);
                 });
-                optionsRow.appendChild(chip);
+                optionsList.appendChild(item);
             });
-            dock.appendChild(optionsRow);
+            dock.appendChild(optionsList);
         }
+
+        // 3. Footer with custom text input and Skip button
+        const footer = document.createElement('div');
+        footer.className = 'ask-dock-footer';
+
+        const customWrap = document.createElement('div');
+        customWrap.className = 'ask-custom-input-wrap';
+
+        const pencilSvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        pencilSvg.setAttribute('class', 'ask-custom-icon');
+        pencilSvg.setAttribute('width', '13');
+        pencilSvg.setAttribute('height', '13');
+        pencilSvg.setAttribute('viewBox', '0 0 24 24');
+        pencilSvg.setAttribute('fill', 'none');
+        pencilSvg.setAttribute('stroke', 'currentColor');
+        pencilSvg.setAttribute('stroke-width', '2');
+        pencilSvg.setAttribute('stroke-linecap', 'round');
+        pencilSvg.setAttribute('stroke-linejoin', 'round');
+        pencilSvg.innerHTML = '<path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>';
+
+        const customInput = document.createElement('input');
+        customInput.type = 'text';
+        customInput.className = 'ask-custom-input';
+        customInput.placeholder = i18n.askUserCustomPlaceholder || 'Something else...';
+
+        customInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                e.stopPropagation();
+                const val = (customInput.value || '').trim();
+                if (val) {
+                    resolveAnswer(val);
+                }
+            }
+        });
+
+        customWrap.appendChild(pencilSvg);
+        customWrap.appendChild(customInput);
+        footer.appendChild(customWrap);
+
+        const skipBtn = document.createElement('button');
+        skipBtn.type = 'button';
+        skipBtn.className = 'ask-skip-btn';
+        skipBtn.textContent = i18n.askUserSkip || 'Skip';
+        skipBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            resolveAnswer(i18n.askUserSkip || 'Skipped');
+        });
+        footer.appendChild(skipBtn);
+
+        dock.appendChild(footer);
 
         // Cache original input attributes to restore later
         this._originalPlaceholder = this.messageInput.placeholder;
@@ -1411,30 +1459,56 @@ class ChatUIController {
             }
         };
 
+        const handleGlobalKeydown = (e) => {
+            if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) {
+                return;
+            }
+            if (e.key >= '1' && e.key <= '9') {
+                const num = parseInt(e.key, 10);
+                if (Array.isArray(req.options) && num <= req.options.length) {
+                    e.preventDefault();
+                    resolveAnswer(req.options[num - 1]);
+                }
+            } else if (e.key === 'Escape') {
+                e.preventDefault();
+                this.closeAskUserDock();
+                if (typeof onAnswer === 'function') {
+                    onAnswer('');
+                }
+            }
+        };
+
         this._askDockInputKeydown = handleKeydown;
         this._askDockSendClick = handleSendClick;
+        this._askDockGlobalKeydown = handleGlobalKeydown;
+        document.addEventListener('keydown', handleGlobalKeydown, true);
 
         if (req.allowCustom === false) {
             this.messageInput.disabled = true;
-            this.messageInput.placeholder = 'Please choose one of the options above';
+            this.messageInput.placeholder = i18n.askUserCustomPlaceholder || 'Please choose one of the options above';
         } else {
             this.messageInput.disabled = false;
-            this.messageInput.placeholder = 'Type custom response... (or select an option above)';
+            this.messageInput.placeholder = i18n.placeholderChat || 'Type custom response... (or select an option above)';
             this.messageInput.addEventListener('keydown', handleKeydown, true);
-            this.messageInput.focus();
         }
 
         if (this.sendBtn) {
             this.sendBtn.addEventListener('click', handleSendClick, true);
         }
 
-        inputCard.insertBefore(dock, this.messageInput);
+        // Mount cleanly above .input-card inside .input-panel
+        const inputPanel = inputCard.closest('.input-panel') || inputCard.parentElement;
+        if (inputPanel && inputPanel.contains(inputCard)) {
+            inputPanel.insertBefore(dock, inputCard);
+        } else {
+            inputCard.insertBefore(dock, this.messageInput);
+        }
         this._activeAskUserDock = dock;
     }
 
     /**
      * Closes the active ask_user dock and restores message input to its default state.
-     * Removes the dock from .input-card, unbinds captured event listeners, and resets input placeholders.
+     * Removes the dock from .input-panel / .input-card, unbinds captured event listeners, and resets input placeholders.
      */
     closeAskUserDock() {
         if (this._activeAskUserDock) {
@@ -1443,6 +1517,11 @@ class ChatUIController {
         } else {
             const existing = document.getElementById('ask-user-dock');
             if (existing) existing.remove();
+        }
+
+        if (this._askDockGlobalKeydown) {
+            document.removeEventListener('keydown', this._askDockGlobalKeydown, true);
+            this._askDockGlobalKeydown = null;
         }
 
         if (this.messageInput) {

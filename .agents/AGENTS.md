@@ -243,6 +243,39 @@ When implementing or modifying completions across providers, dynamically apply t
   - `HistoryManager.js` uses centralized event delegation on `this.historyList` instead of attaching per-item click listeners across history records.
   - `preview_server.js` restricts dynamic module reloading strictly to `/api/*` endpoints, keeping static asset delivery instantaneous.
 
+---
+
+## 21. Workspace Mode Gating & No-Workspace Ask Mode Contract
+
+- **Strict Mode Choice Menu Gating**:
+  - When no workspace directory is active (`hasActiveWorkspace === false`):
+    - The mode selection dropdown trigger container (`#context-options-dropdown-container`) is **strictly hidden** (`display: none` via `.hidden`).
+    - The application is **locked to `ask` mode** (`activeMode = 'ask'`). No agent or planning mode execution is permitted.
+    - Prompts run with read-only conversational safety: tools are restricted to utilities, web search, fetch URL, and user clarification (`ask_user`), without workspace file mutation tools.
+  - When an active workspace folder is opened (`hasActiveWorkspace === true`):
+    - The mode dropdown container is revealed (removes `.hidden`).
+    - The user can select between `ask`, `agent`, and `planning` modes.
+- **Initial Workspace Binding & IPC Sync**:
+  - `WorkspaceManager` defaults to an empty string (`''`) on startup rather than automatically binding `process.cwd()`.
+  - Backend and renderer synchronize workspace state bidirectionally via the `setWorkspace` IPC message, ensuring session changes and new chats clear the backend workspace path immediately.
+
+---
+
+## 22. Interactive Prompt Options Card Architecture (Claude Code Parity)
+
+- **Standalone Card Elevation & Docking**:
+  - The clarification prompt and question selection interface (`#ask-user-dock`) is mounted directly above `.input-card` within `.input-panel` rather than being nested awkwardly inside the input box.
+  - Eliminates conflicting textarea focus outlines and maintains a clean floating card elevation.
+- **Vertical Numbered Option List**:
+  - Suggested choices are rendered as full-width vertical action rows (`.ask-option-item`) with subtle dividers (`border-top: 1px solid var(--app-border-subtle)`).
+  - Each item features a distinct rounded number badge (`.ask-option-badge`, `1`..`9`) and clean typography (`.ask-option-label`).
+- **Footer Controls & Keyboard Navigation**:
+  - The footer includes a dedicated custom response input (`.ask-custom-input-wrap` with pencil icon) and a pill-styled skip button (`.ask-skip-btn`).
+  - Supports instant keyboard number navigation (`1`..`9`), `Escape` for dismissal, and `Enter` for submitting custom responses.
+  - Strict i18n parity (`askUserSkip`, `askUserCustomPlaceholder`) maintained across all 18 languages.
+
+
+
 
 
 

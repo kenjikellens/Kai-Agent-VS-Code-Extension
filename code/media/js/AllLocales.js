@@ -1,5 +1,7 @@
 window.KAI_ALL_LOCALES = {
   "ar": {
+    "askUserSkip": "تخطي",
+    "askUserCustomPlaceholder": "شيء آخر...",
     "newChat": "محادثة جديدة",
     "previousChats": "المحادثات السابقة",
     "noPreviousChats": "لم يتم العثور على محادثات سابقة.",
@@ -73,6 +75,8 @@ window.KAI_ALL_LOCALES = {
     "speed": "السرعة"
   },
   "cs": {
+    "askUserSkip": "Přeskočit",
+    "askUserCustomPlaceholder": "Něco jiného...",
     "newChat": "Nový chat",
     "previousChats": "Předchozí chaty",
     "noPreviousChats": "Nebyly nalezeny žádné předchozí chaty.",
@@ -141,6 +145,8 @@ window.KAI_ALL_LOCALES = {
     "speed": "Rychlost"
   },
   "de": {
+    "askUserSkip": "Überspringen",
+    "askUserCustomPlaceholder": "Etwas anderes...",
     "newChat": "Neuer Chat",
     "previousChats": "Bisherige Chats",
     "noPreviousChats": "Keine bisherigen Chats gefunden.",
@@ -214,6 +220,8 @@ window.KAI_ALL_LOCALES = {
     "speed": "Geschwindigkeit"
   },
   "en": {
+    "askUserSkip": "Skip",
+    "askUserCustomPlaceholder": "Something else...",
     "newChat": "New Chat",
     "previousChats": "Previous Chats",
     "noPreviousChats": "No previous chats found.",
@@ -287,6 +295,8 @@ window.KAI_ALL_LOCALES = {
     "speed": "Speed"
   },
   "es": {
+    "askUserSkip": "Omitir",
+    "askUserCustomPlaceholder": "Algo más...",
     "newChat": "Nuevo Chat",
     "previousChats": "Chats Anteriores",
     "noPreviousChats": "No se encontraron chats anteriores.",
@@ -360,6 +370,8 @@ window.KAI_ALL_LOCALES = {
     "speed": "Velocidad"
   },
   "fr": {
+    "askUserSkip": "Passer",
+    "askUserCustomPlaceholder": "Autre chose...",
     "newChat": "Nouvelle Discussion",
     "previousChats": "Discussions Précédentes",
     "noPreviousChats": "Aucune discussion précédente trouvée.",
@@ -433,6 +445,8 @@ window.KAI_ALL_LOCALES = {
     "speed": "Vitesse"
   },
   "hi": {
+    "askUserSkip": "छोड़ें",
+    "askUserCustomPlaceholder": "कुछ और...",
     "newChat": "नया चैट",
     "previousChats": "पिछला चैट",
     "noPreviousChats": "कोई पिछला चैट नहीं मिला।",
@@ -506,6 +520,8 @@ window.KAI_ALL_LOCALES = {
     "speed": "गति"
   },
   "hu": {
+    "askUserSkip": "Kihagyás",
+    "askUserCustomPlaceholder": "Valami más...",
     "newChat": "Új csevegés",
     "previousChats": "Előző csevegések",
     "noPreviousChats": "Nem találhatók korábbi csevegések.",
@@ -574,6 +590,8 @@ window.KAI_ALL_LOCALES = {
     "speed": "Sebesség"
   },
   "it": {
+    "askUserSkip": "Salta",
+    "askUserCustomPlaceholder": "Qualcos'altro...",
     "newChat": "Nuova Chat",
     "previousChats": "Chat Precedenti",
     "noPreviousChats": "Nessuna chat precedente trovata.",
@@ -647,6 +665,8 @@ window.KAI_ALL_LOCALES = {
     "speed": "Velocità"
   },
   "ja": {
+    "askUserSkip": "スキップ",
+    "askUserCustomPlaceholder": "その他...",
     "newChat": "新規チャット",
     "previousChats": "過去のチャット",
     "noPreviousChats": "過去のチャットが見つかりません。",
@@ -720,6 +740,8 @@ window.KAI_ALL_LOCALES = {
     "speed": "生成速度"
   },
   "ko": {
+    "askUserSkip": "건너뛰기",
+    "askUserCustomPlaceholder": "기타...",
     "newChat": "새 채팅",
     "previousChats": "이전 대화",
     "noPreviousChats": "이전 대화가 없습니다.",
@@ -793,6 +815,8 @@ window.KAI_ALL_LOCALES = {
     "speed": "생성 속도"
   },
   "nl": {
+    "askUserSkip": "Sla over",
+    "askUserCustomPlaceholder": "Iets anders...",
     "newChat": "Nieuwe Chat",
     "previousChats": "Eerdere Chats",
     "noPreviousChats": "Geen eerdere chats gevonden.",
@@ -866,6 +890,8 @@ window.KAI_ALL_LOCALES = {
     "speed": "Snelheid"
   },
   "pl": {
+    "askUserSkip": "Pomiń",
+    "askUserCustomPlaceholder": "Coś innego...",
     "newChat": "Nowy czat",
     "previousChats": "Poprzednie czaty",
     "noPreviousChats": "Nie znaleziono poprzednich czatów.",
@@ -939,6 +965,8 @@ window.KAI_ALL_LOCALES = {
     "speed": "Szybkość"
   },
   "pt": {
+    "askUserSkip": "Pular",
+    "askUserCustomPlaceholder": "Outra coisa...",
     "newChat": "Novo Chat",
     "previousChats": "Chats Anteriores",
     "noPreviousChats": "Nenhum chat anterior encontrado.",
@@ -1012,6 +1040,8 @@ window.KAI_ALL_LOCALES = {
     "speed": "Velocidade"
   },
   "ru": {
+    "askUserSkip": "Пропустить",
+    "askUserCustomPlaceholder": "Что-то другое...",
     "newChat": "Новый чат",
     "previousChats": "Предыдущие чаты",
     "noPreviousChats": "Предыдущие чаты не найдены.",
@@ -1085,6 +1115,8 @@ window.KAI_ALL_LOCALES = {
     "speed": "Скорость"
   },
   "tr": {
+    "askUserSkip": "Geç",
+    "askUserCustomPlaceholder": "Başka bir şey...",
     "newChat": "Yeni Sohbet",
     "previousChats": "Önceki Sohbetler",
     "noPreviousChats": "Önceki sohbet bulunamadı.",
@@ -1223,6 +1255,8 @@ window.KAI_ALL_LOCALES = {
     "placeholderPlanning": "描述專案任務以產生實作計劃..."
   },
   "zh": {
+    "askUserSkip": "跳过",
+    "askUserCustomPlaceholder": "其他...",
     "newChat": "新建对话",
     "previousChats": "历史对话",
     "noPreviousChats": "未找到历史对话。",

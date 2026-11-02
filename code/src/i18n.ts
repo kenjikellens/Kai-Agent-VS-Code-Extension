@@ -76,6 +76,8 @@ export interface Translations {
     streamSettleDelay?: string;
     streamSettleDelayDesc?: string;
     speed?: string;
+    askUserSkip?: string;
+    askUserCustomPlaceholder?: string;
 }
 
 /**
