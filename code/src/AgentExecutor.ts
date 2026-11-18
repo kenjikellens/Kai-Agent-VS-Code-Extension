@@ -87,9 +87,11 @@ export class AgentExecutor {
             provider.supportsNativeFunctionCalling?.() && provider.chatCompletionStreamWithTools
         );
 
-        this.tools = getRegisteredTools(mode);
+        const hasWorkspace = Boolean(this.workspacePath && this.workspacePath.trim());
+        const effectiveMode = (planningMode || mode === 'planning') ? 'planning' : mode;
+        this.tools = getRegisteredTools(effectiveMode, hasWorkspace);
         // Find existing system prompt or inject ours at the beginning
-        let systemContent = this.getSystemPrompt(mode, useNativeFunctionCalling);
+        let systemContent = this.getSystemPrompt(effectiveMode, useNativeFunctionCalling);
         const now = new Date();
         const currentDayTimeStr = `[Temporal Context & Knowledge Cutoff]\n- Current Date and Time: ${now.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}, ${now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}\n- Your internal training cutoff is in the past. Events, releases, and information dated prior to the current date are historical facts, not future speculation.\n- NEVER state that an event, product, or topic prior to the current date is unreleased or speculative based on training cutoff limitations. Use available search tools if current details are required.`;
         systemContent += `\n\n${currentDayTimeStr}\n`;

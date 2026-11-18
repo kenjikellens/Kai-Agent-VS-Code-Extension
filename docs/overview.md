@@ -199,3 +199,8 @@ Whenever architecture, UI components, runtime features, or system design guideli
   - **Ask Mode**: Authoritative, read-only code intelligence and external documentation lookup. File modification is strictly barred.
   - **Planning Mode**: Two-phase architecture. Phase 1 conducts read-only research and outputs `<implementation_plan title="...">` with proposed diffs and verification steps; zero code modifications are permitted before explicit user approval.
   - **Agent Mode**: Autonomous execution, root-cause investigation, and surgical diff editing (`replace_file_content` / `multi_replace_file_content` for existing files, `write_file` for new files).
+
+### R. Security Hardening, Boundary Enforcement & Safe Execution
+- **Preview Server Hardening (`preview_server.js`)**: Loopback `127.0.0.1` binding, strict localhost `Origin` + per-session `X-KAI-Token` verification, static path boundary checks, 10 MB body limit, `/api/health` readiness endpoint, and `TopMost` Windows folder picker handling.
+- **Tool & Host Isolation**: Hardened `resolveSafePath` (`path.relative` + `fs.realpathSync`), Planning Mode read-only tool gating (`.kai/artifacts/`-only writes), mandatory `requestCommandApproval` across Electron, VS Code, and Browser Preview, `http:`/`https:`-only `openExternal`, and workspace-confined `openFile`.
+- **XSS, SSRF & Secret Protection**: Full quote escaping in `MarkdownFormatter.escapeHtml()`, Mermaid `securityLevel: 'strict'` + SVG sanitization, strict `index.html` CSP + Electron `sandbox: true`, SSRF IP/redirect/size guards in `fetch_url.ts`/`HttpClient.ts`, `x-goog-api-key` header auth in `GeminiClient.ts`, `safeStorage` encryption in `ConfigManager.ts`, and recursive-descent arithmetic parsing in `BrowserToolsExecutor.js`.

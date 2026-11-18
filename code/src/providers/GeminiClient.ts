@@ -54,9 +54,9 @@ export class GeminiClient implements ILLMProvider {
         }
 
         return new Promise<boolean>((resolve) => {
-            const url = `https://generativelanguage.googleapis.com/v1beta/models?key=${encodeURIComponent(key.trim())}`;
+            const url = 'https://generativelanguage.googleapis.com/v1beta/models';
             try {
-                const req = https.get(url, { timeout: 2500 }, (res) => {
+                const req = https.get(url, { timeout: 2500, headers: { 'x-goog-api-key': key.trim() } }, (res) => {
                     resolve(Boolean(res.statusCode && res.statusCode >= 200 && res.statusCode < 300));
                 });
                 req.on('error', () => resolve(false));
@@ -89,7 +89,7 @@ export class GeminiClient implements ILLMProvider {
             }
 
             const modelParam = model || 'gemini-3.1-flash-lite';
-            const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelParam}:generateContent?key=${apiKey}`;
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(modelParam)}:generateContent`;
 
             const contents = this.toGeminiContents(messages as ChatMessage[]);
 
@@ -121,7 +121,8 @@ export class GeminiClient implements ILLMProvider {
                     signal: signal,
                     headers: {
                         'Content-Type': 'application/json',
-                        'Content-Length': Buffer.byteLength(payload)
+                        'Content-Length': Buffer.byteLength(payload),
+                        'x-goog-api-key': apiKey
                     }
                 };
 
@@ -194,7 +195,7 @@ export class GeminiClient implements ILLMProvider {
             }
 
             const modelParam = model || 'gemini-3.1-flash-lite';
-            const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelParam}:streamGenerateContent?key=${apiKey}`;
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(modelParam)}:streamGenerateContent`;
 
             const contents = this.toGeminiContents(messages as ChatMessage[]);
 
@@ -228,7 +229,8 @@ export class GeminiClient implements ILLMProvider {
                     signal: signal,
                     headers: {
                         'Content-Type': 'application/json',
-                        'Content-Length': Buffer.byteLength(payload)
+                        'Content-Length': Buffer.byteLength(payload),
+                        'x-goog-api-key': apiKey
                     }
                 };
 
@@ -363,7 +365,7 @@ export class GeminiClient implements ILLMProvider {
             }
 
             const modelParam = model || 'gemini-3.1-flash-lite';
-            const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelParam}:streamGenerateContent?key=${apiKey}`;
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(modelParam)}:streamGenerateContent`;
             const requestBody: any = {
                 contents: this.toGeminiContents(messages),
                 generationConfig: {
@@ -396,7 +398,8 @@ export class GeminiClient implements ILLMProvider {
                     signal,
                     headers: {
                         'Content-Type': 'application/json',
-                        'Content-Length': Buffer.byteLength(payload)
+                        'Content-Length': Buffer.byteLength(payload),
+                        'x-goog-api-key': apiKey
                     }
                 };
 

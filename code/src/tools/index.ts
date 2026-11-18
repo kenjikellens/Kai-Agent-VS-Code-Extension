@@ -45,14 +45,16 @@ export function getRegisteredTools(mode: 'chat' | 'agent' | 'planning' | 'ask' |
     const webSearchTool = new WebSearchTool();
     const askUserTool = new AskUserTool();
 
-    // 1. Chat Mode WITHOUT Workspace: utilities, web access, and interactive ask_user
-    if (mode === 'chat' && !hasWorkspace) {
-        return [
-            utilityTool,
-            fetchUrlTool,
-            webSearchTool,
-            askUserTool
-        ];
+    // 1. Chat or Ask Mode WITHOUT Workspace: utilities, web access, and interactive ask_user
+    if ((mode === 'chat' || mode === 'ask' || !hasWorkspace) && mode !== 'planning') {
+        if (!hasWorkspace) {
+            return [
+                utilityTool,
+                fetchUrlTool,
+                webSearchTool,
+                askUserTool
+            ];
+        }
     }
 
     // 2. Chat or Ask Mode WITH Workspace: read-only workspace inspection + utilities + web + ask_user

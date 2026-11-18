@@ -8,6 +8,7 @@ export { ChatSessionRecord };
  */
 export class SessionStore {
     private cache: Record<string, ChatSessionRecord> = {};
+    private readonly readyPromise: Promise<void>;
 
     /**
      * Initializes a new instance of SessionStore.
@@ -17,11 +18,19 @@ export class SessionStore {
         if (this.storage) {
             const loaded = this.storage.load();
             if (loaded instanceof Promise) {
-                loaded.then(data => { this.cache = data || {}; });
+                this.readyPromise = loaded.then(data => { this.cache = data || {}; }).catch(() => { this.cache = {}; });
             } else {
                 this.cache = loaded || {};
+                this.readyPromise = Promise.resolve();
             }
+        } else {
+            this.readyPromise = Promise.resolve();
         }
+    }
+
+    /** Ensures initial async storage load has completed before mutations. */
+    public async ready(): Promise<void> {
+        await this.readyPromise;
     }
 
     /**
@@ -46,6 +55,7 @@ export class SessionStore {
      * @param chat The session record to persist.
      */
     public async saveChat(chat: ChatSessionRecord): Promise<void> {
+        await this.readyPromise;
         if (!chat || !chat.id) {
             return;
         }
@@ -70,6 +80,7 @@ export class SessionStore {
      * @returns Updated list of remaining sessions.
      */
     public async deleteChat(chatId: string): Promise<ChatSessionRecord[]> {
+        await this.readyPromise;
         if (!chatId) {
             return this.getHistoryList();
         }

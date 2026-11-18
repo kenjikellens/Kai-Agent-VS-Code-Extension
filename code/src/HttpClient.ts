@@ -6,6 +6,9 @@ import { URL } from 'url';
  * Reusable HTTP and HTTPS client utility providing promise-based JSON requests
  * and Server-Sent Events (SSE) stream parsing with strict timeout enforcement.
  */
+const MAX_JSON_RESPONSE_BYTES = 10 * 1024 * 1024;
+const MAX_ERROR_BODY_BYTES = 256 * 1024;
+
 export class HttpClient {
     /**
      * Executes an HTTP or HTTPS GET request and parses the JSON response body.
@@ -29,9 +32,19 @@ export class HttpClient {
                 };
 
                 const req = clientModule.request(options, (res) => {
-                    let data = '';
-                    res.on('data', (chunk) => { data += chunk; });
+                    const chunks: Buffer[] = [];
+                    let totalBytes = 0;
+                    res.on('data', (chunk: Buffer) => {
+                        totalBytes += chunk.length;
+                        if (totalBytes > MAX_JSON_RESPONSE_BYTES) {
+                            req.destroy();
+                            reject(new Error(`Response exceeded ${MAX_JSON_RESPONSE_BYTES} byte limit from ${urlStr}`));
+                            return;
+                        }
+                        chunks.push(chunk);
+                    });
                     res.on('end', () => {
+                        const data = Buffer.concat(chunks).toString('utf8');
                         if (res.statusCode && res.statusCode >= 200 && res.statusCode < 300) {
                             try {
                                 resolve(JSON.parse(data) as T);
@@ -99,7 +112,9 @@ export class HttpClient {
                 const req = clientModule.request(options, (res) => {
                     if (res.statusCode && (res.statusCode < 200 || res.statusCode >= 300)) {
                         let errBody = '';
-                        res.on('data', (d) => errBody += d);
+                        res.on('data', (d) => {
+                            if (errBody.length < MAX_ERROR_BODY_BYTES) errBody += d.toString();
+                        });
                         res.on('end', () => {
                             try {
                                 const parsed = JSON.parse(errBody);

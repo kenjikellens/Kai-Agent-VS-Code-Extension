@@ -306,3 +306,18 @@ When implementing or modifying completions across providers, dynamically apply t
   - Webview bridges and browser preview engines forward runtime exceptions and unhandled promise rejections to `console.error` with distinct prefixes (`[KAI Tool Error]`, `[KAI Webview Global Error]`), ensuring immediate visibility in browser / Electron DevTools (`F12`).
 - **UI Error Visibility**:
   - Tool execution failures (including `ask_user` errors) are surfaced directly as red system messages (`.system-message`) in the chat container so errors are immediately noticeable without opening developer consoles.
+
+---
+
+## 25. Security Hardening, Command Approval & Boundary Guards
+
+- **Preview Server Origin & Session Token Enforcement (`preview_server.js`)**:
+  - Binds strictly to `127.0.0.1` without wildcard CORS (`Access-Control-Allow-Origin: *`), enforces per-session `X-KAI-Token` + allowed localhost `Origin` checks on all `POST /api/*` routes, bounds request bodies (`10 MB`), and validates static paths inside `src/renderer/` and `prompts/`.
+- **Workspace, Command & Planning Mode Enforcement**:
+  - `resolveSafePath()` rejects empty workspace paths, sibling-prefix escapes (`path.relative`), and symlink traversals (`fs.realpathSync`).
+  - `getRegisteredTools('planning', true)` enforces read-only workspace tools and restricts `write_file` strictly to `.kai/artifacts/`.
+  - `RunCommandTool` delegates user approval via `IHostServices.requestCommandApproval` across Electron (`StandaloneHostServices`), VS Code Extension (`VSCodeHostServices`), and Browser Preview (`BrowserToolsExecutor`).
+  - `openExternal` / `openExternalUrl` restrict schemes strictly to `http:` / `https:`, and `openFile` validates paths via `resolveSafePath`.
+- **XSS, SSRF & Secret Storage Controls**:
+  - `MarkdownFormatter.escapeHtml()` escapes `&`, `<`, `>`, `"`, and `'`; `MermaidRenderer.js` runs with `securityLevel: 'strict'` and SVG sanitization; `index.html` enforces a strict `script-src 'self'` CSP; Electron `BrowserWindow` enables `sandbox: true` and navigation guards.
+  - `fetch_url.ts` enforces DNS/IP SSRF blocking (loopback, private, link-local), max 3 redirects, and 1 MB stream caps; `GeminiClient.ts` transmits keys via `x-goog-api-key` headers; `ConfigManager.ts` encrypts API keys via Electron `safeStorage` when available with `0o600` file mode.
