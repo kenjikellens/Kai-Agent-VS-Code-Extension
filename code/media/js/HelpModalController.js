@@ -17,7 +17,8 @@ class HelpModalController {
     }
 
     /**
-     * Dynamically creates the help modal container structure in the DOM.
+     * Dynamically creates the help modal container structure with ARIA dialog attributes and standalone SVG icons.
+     * Appends the modal element to document.body and caches this.container.
      */
     initModalDOM() {
         const modal = document.createElement('div');
@@ -25,14 +26,14 @@ class HelpModalController {
         modal.className = 'help-container hidden';
         modal.innerHTML = `
             <div class="help-backdrop"></div>
-            <div class="help-modal-card">
+            <div class="help-modal-card" role="dialog" aria-modal="true" aria-labelledby="help-modal-title-text">
                 <div class="help-modal-header">
                     <div class="help-modal-title">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+                        ${DOMUtils.icon('help_circle', 16)}
                         <span id="help-modal-title-text">Kai Quick Guide & Shortcuts</span>
                     </div>
-                    <button type="button" class="icon-btn icon-btn--close-pill" id="close-help-btn" title="Close">
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                    <button type="button" class="icon-btn icon-btn--close-pill" id="close-help-btn" title="Close" aria-label="Close">
+                        ${DOMUtils.icon('close', 12, { strokeWidth: 2.5 })}
                     </button>
                 </div>
                 <div class="help-modal-body" id="help-modal-body">
@@ -79,20 +80,30 @@ class HelpModalController {
     }
 
     /**
-     * Opens the help modal and renders the latest localized guide content.
+     * Opens the help modal, captures the previous focus target, and moves focus to the close button.
      */
     open() {
         if (!this.container) return;
+        this._previousFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
         this.renderHelpContent();
         this.container.classList.remove('hidden');
+        const closeBtn = this.container.querySelector('#close-help-btn');
+        if (closeBtn) closeBtn.focus();
     }
 
     /**
-     * Closes the help modal dialog.
+     * Closes the help modal dialog and restores focus to the prior element or chat input.
      */
     close() {
         if (!this.container) return;
         this.container.classList.add('hidden');
+        const target = (this._previousFocus && document.contains(this._previousFocus))
+            ? this._previousFocus
+            : document.getElementById('message-input');
+        this._previousFocus = null;
+        if (target && typeof target.focus === 'function') {
+            target.focus();
+        }
     }
 
     /**
@@ -200,7 +211,7 @@ class HelpModalController {
             headerBtn.className = 'category-header-btn';
             headerBtn.innerHTML = `
                 <span class="category-title">${sec.title}</span>
-                <svg class="category-chevron" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                ${DOMUtils.icon('chevron_down', 10, { className: 'category-chevron', strokeWidth: 2.5 })}
             `;
 
             const contentDiv = document.createElement('div');

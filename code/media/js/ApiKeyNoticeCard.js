@@ -23,7 +23,7 @@ class ApiKeyNoticeCard {
 
         const iconDiv = document.createElement('div');
         iconDiv.className = 'api-key-notice-icon';
-        iconDiv.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>';
+        iconDiv.innerHTML = DOMUtils.icon('alert_circle', 20);
 
         const bodyDiv = document.createElement('div');
         bodyDiv.className = 'api-key-notice-body';
@@ -44,7 +44,7 @@ class ApiKeyNoticeCard {
         const openSettingsBtn = document.createElement('button');
         openSettingsBtn.type = 'button';
         openSettingsBtn.className = 'api-key-notice-btn api-key-notice-primary';
-        openSettingsBtn.textContent = '⚙️ Open Settings';
+        openSettingsBtn.textContent = 'Open Settings';
         openSettingsBtn.addEventListener('click', () => {
             window.location.hash = 'settings';
             setTimeout(() => {

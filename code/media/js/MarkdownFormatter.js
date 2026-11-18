@@ -162,8 +162,8 @@ class MarkdownFormatter {
 
         // 1. Extract triple backtick code blocks into isolated placeholders
         const codeBlocks = [];
-        const copyIconSvg = `<svg class="copy-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>`;
-        const downloadIconSvg = `<svg class="download-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>`;
+        const copyIconSvg = DOMUtils.icon('copy_response', 14, { className: 'copy-icon' });
+        const downloadIconSvg = DOMUtils.icon('download', 14, { className: 'download-icon' });
 
         // Closed code blocks
         esc = esc.replace(/```([a-zA-Z0-9_\-\+]*)[ \t]*\r?\n([\s\S]*?)```/g, (match, lang, rawCode) => {
@@ -406,9 +406,9 @@ class MarkdownFormatter {
 
         // Plan cards placeholder extraction
         const planCards = [];
-        const planChevronSvg = `<svg class="plan-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>`;
-        const planIconSvg = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect></svg>`;
-        const proceedIconSvg = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>`;
+        const planChevronSvg = DOMUtils.icon('chevron_down', 14, { className: 'plan-chevron', strokeWidth: 2 });
+        const planIconSvg = DOMUtils.icon('plan_mode', 14);
+        const proceedIconSvg = DOMUtils.icon('play', 12, { strokeWidth: 2.5 });
 
         // Parse <implementation_plan title="...">...</implementation_plan> tags
         escaped = escaped.replace(/&lt;implementation_plan(?:\s+title=&quot;([^&]*)&quot;|\s+title="([^"]*)")?&gt;([\s\S]*?)(?:&lt;\/implementation_plan&gt;|$)/gi, (match, title1, title2, body) => {
@@ -444,8 +444,8 @@ class MarkdownFormatter {
 
         // 1. Extract triple backtick code blocks into isolated placeholders
         const codeBlocks = [];
-        const copyIconSvg = `<svg class="copy-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>`;
-        const downloadIconSvg = `<svg class="download-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>`;
+        const copyIconSvg = DOMUtils.icon('copy_response', 14, { className: 'copy-icon' });
+        const downloadIconSvg = DOMUtils.icon('download', 14, { className: 'download-icon' });
 
         // Closed code blocks
         escaped = escaped.replace(/```([a-zA-Z0-9_\-\+]*)[ \t]*\r?\n([\s\S]*?)```/g, (match, lang, rawCode) => {
@@ -459,18 +459,18 @@ class MarkdownFormatter {
                         `<div class="mermaid-header-left">` +
                             `<div class="mermaid-tab-group">` +
                                 `<button type="button" class="mermaid-tab-btn active" data-tab="diagram">` +
-                                    `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>` +
+                                    `${DOMUtils.icon('diagram', 13)}` +
                                     `<span>Diagram</span>` +
                                 `</button>` +
                                 `<button type="button" class="mermaid-tab-btn" data-tab="code">` +
-                                    `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>` +
+                                    `${DOMUtils.icon('raw_code', 13)}` +
                                     `<span>Code</span>` +
                                 `</button>` +
                             `</div>` +
                         `</div>` +
                         `<div class="mermaid-header-actions">` +
                             `<button type="button" class="copy-mermaid-code-btn" title="Copy Mermaid Code" aria-label="Copy Mermaid Code">${copyIconSvg}<span>Code</span></button>` +
-                            `<button type="button" class="copy-mermaid-svg-btn" title="Copy SVG" aria-label="Copy SVG"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg><span>SVG</span></button>` +
+                            `<button type="button" class="copy-mermaid-svg-btn" title="Copy SVG" aria-label="Copy SVG">${DOMUtils.icon('copy_response', 13)}<span>SVG</span></button>` +
                             `<button type="button" class="download-mermaid-svg-btn" title="Download SVG" aria-label="Download SVG">${downloadIconSvg}</button>` +
                         `</div>` +
                     `</div>` +

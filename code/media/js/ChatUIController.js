@@ -157,7 +157,7 @@ class ChatUIController {
                         const textToCopy = codeEl.textContent || '';
                         navigator.clipboard.writeText(textToCopy).then(() => {
                             const originalHTML = copyBtn.innerHTML;
-                            copyBtn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>`;
+                            copyBtn.innerHTML = DOMUtils.icon('check', 14, { strokeWidth: 2.5 });
                             copyBtn.classList.add('copied');
                             setTimeout(() => {
                                 copyBtn.innerHTML = originalHTML;
@@ -205,7 +205,7 @@ class ChatUIController {
                         const rawText = assistantMsg.dataset.rawContent || (assistantMsg.querySelector('.message-content') ? assistantMsg.querySelector('.message-content').innerText : '') || '';
                         navigator.clipboard.writeText(rawText).then(() => {
                             const originalHTML = copyRespBtn.innerHTML;
-                            copyRespBtn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>`;
+                            copyRespBtn.innerHTML = DOMUtils.icon('check', 14, { strokeWidth: 2.5 });
                             copyRespBtn.classList.add('copied');
                             setTimeout(() => {
                                 copyRespBtn.innerHTML = originalHTML;
@@ -360,8 +360,8 @@ class ChatUIController {
         if (messageBubble) messageBubble.classList.add('hidden');
         if (editBtn) editBtn.classList.add('hidden');
 
-        const sendSvg = window.KAI_SVGS['send'] || '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>';
-        const cancelSvg = window.KAI_SVGS['cancel'] || '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>';
+        const sendSvg = DOMUtils.icon('send', 12, { strokeWidth: 2.5 });
+        const cancelSvg = DOMUtils.icon('cancel', 13, { strokeWidth: 2 });
 
         const editorDiv = document.createElement('div');
         editorDiv.className = 'inline-prompt-editor';
@@ -454,7 +454,7 @@ class ChatUIController {
         heroDiv.className = 'welcome-hero-container';
         heroDiv.id = 'welcome-hero';
 
-        const logoSvg = svgs['kai_icon'] || '<svg width="24" height="24" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg"><rect x="7.5" y="1" width="1" height="2" fill="currentColor"/><circle cx="8" cy="1" r="0.8" fill="currentColor"/><rect x="2" y="6" width="1" height="3" rx="0.5" fill="currentColor"/><rect x="13" y="6" width="1" height="3" rx="0.5" fill="currentColor"/><path fill="none" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round" stroke-linecap="round" d="M4 4.5 h8 a0.5 0.5 0 0 1 0.5 0.5 v5.5 a0.5 0.5 0 0 1 -0.5 0.5 h-6 l-2 2 v-2 h-0.5 a0.5 0.5 0 0 1 -0.5 -0.5 v-5.5 a0.5 0.5 0 0 1 0.5 -0.5 z"/><rect x="5.5" y="6.5" width="1.2" height="1.2" fill="currentColor"/><rect x="9.3" y="6.5" width="1.2" height="1.2" fill="currentColor"/><path fill="none" stroke="currentColor" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round" d="M6 9.2 Q8 10.5 10 9.2"/></svg>';
+        const logoSvg = DOMUtils.icon('kai_icon', 24);
 
         heroDiv.innerHTML = `
             <div class="welcome-badge-icon">
@@ -464,11 +464,11 @@ class ChatUIController {
             <div class="welcome-hint">${i18n.welcomePromptHint || 'Ask a question, edit code, or attach files to begin'}</div>
             <div class="welcome-links-row">
                 <button type="button" class="welcome-link-btn" id="welcome-help-btn">
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+                    ${DOMUtils.icon('help_circle', 12)}
                     <span>${i18n.help || 'Help'}</span>
                 </button>
                 <button type="button" class="welcome-link-btn" id="welcome-readme-btn">
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>
+                    ${DOMUtils.icon('read_file', 12)}
                     <span>${i18n.readme || 'README'}</span>
                 </button>
             </div>
@@ -606,10 +606,10 @@ class ChatUIController {
         const bar = document.createElement('div');
         bar.className = 'message-actions';
 
-        const copySvg = window.KAI_SVGS['copy_response'] || '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>';
-        const retrySvg = window.KAI_SVGS['retry'] || '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"></polyline><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path></svg>';
-        const rawSvg = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>';
-        const infoSvg = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>';
+        const copySvg = DOMUtils.icon('copy_response', 14);
+        const retrySvg = DOMUtils.icon('retry', 14);
+        const rawSvg = DOMUtils.icon('raw_code', 14);
+        const infoSvg = DOMUtils.icon('info', 14);
 
         const rawModelName = meta.model || (this.modelDropdownController?.getSelectedModel?.()) || (this.settingsController?.getSelectedModel?.()) || localStorage.getItem('kai.selectedModel') || 'Local Model';
         const displayModelName = this.formatter.formatModelName(rawModelName);
@@ -754,7 +754,7 @@ class ChatUIController {
                     } else {
                         const pill = document.createElement('div');
                         pill.className = 'user-attached-pill';
-                        const fileSvg = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path><polyline points="13 2 13 9 20 9"></polyline></svg>';
+                        const fileSvg = DOMUtils.icon('file', 12);
                         pill.innerHTML = `${fileSvg}<span>${this.formatter.escapeHtml(f.fileName || 'file')}</span>`;
                         gallery.appendChild(pill);
                     }
@@ -765,7 +765,7 @@ class ChatUIController {
             const bubbleWrapper = document.createElement('div');
             bubbleWrapper.className = 'user-message-bubble-wrapper';
 
-            const editSvg = window.KAI_SVGS['edit_prompt'] || '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>';
+            const editSvg = DOMUtils.icon('edit_prompt', 14);
 
             const editBtn = document.createElement('button');
             editBtn.type = 'button';
@@ -1199,12 +1199,15 @@ class ChatUIController {
         if (this.sendBtn) {
             this.sendBtn.disabled = false;
             if (isLoading) {
-                this.sendBtn.innerHTML = window.KAI_SVGS['stop'] || '<svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="2"></rect></svg>';
+                this.sendBtn.innerHTML = DOMUtils.icon('stop', 12);
                 this.sendBtn.title = 'Stop generation';
+                this.sendBtn.setAttribute('aria-label', 'Stop generation');
                 this.showActivityStatus('Processing...');
             } else {
-                this.sendBtn.innerHTML = window.KAI_SVGS['send'] || '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>';
-                this.sendBtn.title = 'Send message';
+                const i18n = window.KAI_I18N || {};
+                this.sendBtn.innerHTML = DOMUtils.icon('send', 12, { strokeWidth: 2.5 });
+                this.sendBtn.title = i18n.sendMessage || 'Send message';
+                this.sendBtn.setAttribute('aria-label', i18n.sendMessage || 'Send message');
                 this.removeActivityStatus();
                 if (this.streamPipeline) {
                     this.streamPipeline.flushImmediate();
@@ -1428,8 +1431,8 @@ class ChatUIController {
         closeBtn.type = 'button';
         closeBtn.className = 'icon-btn icon-btn--close';
         closeBtn.title = i18n.close || 'Dismiss';
-        closeBtn.setAttribute('aria-label', 'Close');
-        closeBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>';
+        closeBtn.setAttribute('aria-label', i18n.close || 'Close');
+        closeBtn.innerHTML = DOMUtils.icon('close', 14);
         closeBtn.addEventListener('click', (e) => {
             e.preventDefault();
             e.stopPropagation();

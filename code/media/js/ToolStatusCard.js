@@ -46,8 +46,8 @@ class ToolStatusCard {
         const toolSvg = svgs[tool] || svgs['default_tool'] || '';
 
         let badge = svgs['spinner'] || '<span class="thinking-spinner"></span>';
-        if (state === 'success') badge = svgs['success'] || '✓';
-        if (state === 'error') badge = svgs['error'] || '✗';
+        if (state === 'success') badge = DOMUtils.icon('success', 12);
+        if (state === 'error') badge = DOMUtils.icon('error', 12);
 
         let name = tool;
         if (tool === 'read_file') name = i18n.toolReading || 'Reading';

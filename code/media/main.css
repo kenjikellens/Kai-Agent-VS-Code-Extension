@@ -71,6 +71,41 @@
   --stream-word-fade-duration: 400ms;
   --stream-settle-base-delay: 300ms;
   --stream-settle-delay: 150ms;
+
+  /* Status & Accent Foreground Tokens */
+  --app-status-ok: var(--vscode-testing-iconPassed, #2ecc71);
+  --app-status-error: var(--vscode-errorForeground, #e74c3c);
+  --app-status-warn: var(--vscode-editorWarning-foreground, var(--main-warning-color));
+  --app-on-accent: var(--vscode-button-foreground, #ffffff);
+
+  /* Category Card & Modal Surface Tokens */
+  --app-category-bg: rgba(255, 255, 255, 0.04);
+  --app-modal-border: var(--app-border-strong);
+
+  /* Typography Scale & Thinking Height Tokens */
+  --app-font-xs: 0.68rem;
+  --app-font-sm: 0.74rem;
+  --app-thinking-max-height: 160px;
+  --app-raw-thinking-max-height: 220px;
+
+  /* File Extension Brand Palette */
+  --file-icon-html: #e44d26;
+  --file-icon-css: #42a5f5;
+  --file-icon-js: #f7df1e;
+  --file-icon-ts: #3178c6;
+  --file-icon-json: #cbcb41;
+  --file-icon-md: #42a5f5;
+  --file-icon-py: #3776ab;
+  --file-icon-lang: #a29bfe;
+  --file-icon-term: #2ecc71;
+  --file-icon-db: #e67e22;
+  --file-icon-config: #b2bec3;
+  --file-icon-media: #fd79a8;
+  --file-icon-pdf: #e74c3c;
+  --file-icon-zip: #fdcb6e;
+  --file-icon-lock: #e74c3c;
+  --file-icon-git: #f14e32;
+  --file-icon-docker: #2496ed;
 }
 
 /* Light Theme Tokens Override for VS Code Light & High Contrast Light Themes */
@@ -91,6 +126,8 @@ body.vscode-high-contrast-light {
   --app-surface-hover: rgba(0, 0, 0, 0.14);
   --app-surface-active: rgba(0, 0, 0, 0.20);
   --app-btn-inset: 0 0 0 1.5px var(--app-surface-hover);
+  --app-category-bg: rgba(0, 0, 0, 0.03);
+  --app-modal-border: rgba(0, 0, 0, 0.14);
   --app-input-bg: var(--vscode-input-background, #ffffff);
   --app-input-border: var(--vscode-input-border, rgba(0, 0, 0, 0.12));
   --app-card-bg: rgba(0, 0, 0, 0.02);
@@ -171,10 +208,6 @@ body {
 :where(button, input, select, textarea):focus-visible {
   outline: 1px solid var(--app-focus);
   outline-offset: 2px;
-}
-
-.hidden {
-  display: none;
 }
 
 /* -----------------------------
@@ -266,6 +299,13 @@ button:disabled {
   background: var(--app-surface-active);
 }
 
+/* Icon Button (Keyboard Focus) - Restores visible VS Code focus ring on keyboard navigation */
+.icon-btn:focus-visible,
+.btn:focus-visible {
+  outline: 1px solid var(--app-focus);
+  outline-offset: 1px;
+}
+
 /* Modifiers on .icon-btn */
 .icon-btn--header {
   padding: 5px;
@@ -306,8 +346,9 @@ button:disabled {
   opacity: 1;
 }
 
+/* Delete Icon Button (Hover) - Highlights destructive delete state on history items */
 .icon-btn--delete:hover {
-  color: #ff6b6b;
+  color: var(--app-status-error);
   background: rgba(255, 107, 107, 0.15);
 }
 
@@ -339,27 +380,6 @@ button:disabled {
 .icon-btn--close-pill svg {
   display: block;
   pointer-events: none;
-}
-
-#send-btn {
-  width: 24px;
-  height: 24px;
-  padding: 0;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  border-radius: 999px;
-  background: var(--app-accent);
-  color: var(--vscode-button-foreground, #ffffff);
-}
-
-#send-btn:hover:not(:disabled) {
-  background: var(--app-accent-hover);
-}
-
-#send-btn:disabled {
-  opacity: 0.4;
 }
 
 /**
@@ -437,9 +457,10 @@ button:disabled {
   box-shadow: var(--app-btn-inset);
 }
 
+/* Sort Toggle (Active) - Selected sort pill with readable foreground across all themes */
 .btn--sort.active {
   background: var(--app-surface-hover, rgba(255, 255, 255, 0.12));
-  color: #ffffff;
+  color: var(--app-fg);
   border-color: var(--app-border-strong, rgba(255, 255, 255, 0.2));
   font-weight: 600;
 }
@@ -904,6 +925,7 @@ button:disabled {
   font-size: 0.78rem;
 }
 
+/* Markdown Table Cells - Shared cell padding and borders for response tables */
 .message-content .md-table th,
 .message-content .md-table td {
   padding: 5px 8px;
@@ -911,6 +933,7 @@ button:disabled {
   border: 1px solid var(--app-border);
 }
 
+/* Markdown Table Header - Elevated header background and bold foreground */
 .message-content .md-table th {
   background: var(--app-surface-strong);
   color: var(--app-fg);
@@ -921,6 +944,7 @@ button:disabled {
   background: var(--app-surface);
 }
 
+/* Typing & Thinking Loaders - Shared inline flex layout for live generation indicators */
 .typing-indicator,
 .thinking-loader {
   display: flex;
@@ -930,6 +954,7 @@ button:disabled {
   font-size: 0.8rem;
 }
 
+/* Typing Indicator - Chat container spacing for active typing dots */
 .typing-indicator {
   padding: 8px 12px;
 }
@@ -975,17 +1000,19 @@ button:disabled {
   background: rgba(0, 122, 204, 0.08);
 }
 
+/* Code Context Header - Displays active editor selection filename above input */
 .code-context-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
   padding: 4px 8px;
   background: rgba(0, 122, 204, 0.15);
-  color: #29b6f6;
+  color: var(--app-tool-call-text);
   font-size: 0.75rem;
   font-weight: 500;
 }
 
+/* Code Context Preview - Scrollable preview snippet for selected editor code */
 #code-context-preview {
   margin: 0;
   padding: 6px 8px;
@@ -993,7 +1020,7 @@ button:disabled {
   overflow-y: auto;
   white-space: pre-wrap;
   background: rgba(0, 0, 0, 0.15);
-  color: #81d4fa;
+  color: var(--app-tool-query-text);
   font-size: 0.75rem;
 }
 
@@ -1071,8 +1098,9 @@ button:disabled {
   cursor: pointer;
 }
 
+/* Attached File Chip Remove (Hover) - Highlights remove icon with theme error color */
 .attached-file-chip .chip-remove-btn:hover {
-  color: #e74c3c;
+  color: var(--app-status-error);
 }
 
 /* Auto-expanding prompt input textarea with max height limit */
@@ -1126,7 +1154,7 @@ button:disabled {
   flex-shrink: 0;
 }
 
-/* Send & stop generation button - Full circle pill */
+/* Send & Stop Generation Button - Consolidated full-circle primary action pill */
 #send-btn,
 #stop-btn {
   display: inline-flex;
@@ -1138,16 +1166,32 @@ button:disabled {
   border: 0;
   border-radius: 999px;
   background: var(--app-accent, #007acc);
-  color: var(--vscode-button-foreground, #ffffff);
+  color: var(--app-on-accent);
   cursor: pointer;
   box-sizing: border-box;
   flex-shrink: 0;
-  transition: opacity 0.15s ease;
+  transition: background-color 0.15s ease, box-shadow 0.15s ease, opacity 0.15s ease;
 }
 
-#send-btn:hover,
-#stop-btn:hover {
+/* Send & Stop Button (Hover) - Darkens accent background without layout shift */
+#send-btn:hover:not(:disabled),
+#stop-btn:hover:not(:disabled) {
+  background: var(--app-accent-hover);
   opacity: 0.9;
+}
+
+/* Send & Stop Button (Disabled) - Mutes send action when input is empty or locked */
+#send-btn:disabled,
+#stop-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* Send & Stop Button (Keyboard Focus) - Visible VS Code focus ring on keyboard navigation */
+#send-btn:focus-visible,
+#stop-btn:focus-visible {
+  outline: 1px solid var(--app-focus);
+  outline-offset: 2px;
 }
 
 /* Context & capabilities popup menu (@ button menu) */
@@ -1311,6 +1355,7 @@ button:disabled {
   transition: background-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
 }
 
+/* Dropdown Trigger (Hover & Focus) - Highlights model trigger pill with inset ring */
 .dropdown-trigger:hover,
 .dropdown-trigger:focus {
   background: var(--app-surface-hover);
@@ -1318,7 +1363,13 @@ button:disabled {
   box-shadow: var(--app-btn-inset);
 }
 
-/* Outer container clipping text behind the component */
+/* Dropdown Trigger (Keyboard Focus) - Restores visible VS Code focus ring */
+.dropdown-trigger:focus-visible {
+  outline: 1px solid var(--app-focus);
+  outline-offset: 1px;
+}
+
+/* Outer Container - Clips overflowing model names cleanly inside trigger and items */
 .model-text-container {
   flex: 0 1 auto;
   min-width: 0;
@@ -1326,62 +1377,21 @@ button:disabled {
   position: relative;
   display: flex;
   align-items: center;
-  mask-image: none;
-  -webkit-mask-image: none;
-  transition: mask-image 0.2s ease, -webkit-mask-image 0.2s ease;
 }
 
-/* Fade out right edge ONLY when text overflows container boundary */
-.model-text-container.has-overflow {
-  mask-image: linear-gradient(to right, #000 0%, #000 calc(100% - 20px), transparent 100%);
-  -webkit-mask-image: linear-gradient(to right, #000 0%, #000 calc(100% - 20px), transparent 100%);
-}
-
-/* Inner Text Element - flex-shrink: 0 ensures text retains natural width for overflow measurement */
+/* Inner Text Element - Truncates long model labels with ellipsis inside flex containers; full name shown in title tooltip */
 .model-text-inner {
-  display: inline-block;
+  display: block;
+  flex: 0 1 auto;
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
   white-space: nowrap;
-  flex-shrink: 0;
-  will-change: transform;
-  transform: translateX(0);
-  transition: transform 0.3s ease-out;
 }
 
-/* Soft fade on both sides during scroll on hover */
-.dropdown-trigger:hover .model-text-container.has-overflow,
-.dropdown-item:hover .model-text-container.has-overflow,
-.model-text-container.has-overflow:hover {
-  mask-image: linear-gradient(to right, transparent 0px, #000 12px, #000 calc(100% - 14px), transparent 100%);
-  -webkit-mask-image: linear-gradient(to right, transparent 0px, #000 12px, #000 calc(100% - 14px), transparent 100%);
-}
-
-.dropdown-trigger:hover .model-text-container.has-overflow .model-text-inner,
-.dropdown-item:hover .model-text-container.has-overflow .model-text-inner,
-.model-text-container.has-overflow:hover .model-text-inner {
-  animation: modelTextPingPong var(--scroll-duration, 8s) ease-in-out infinite;
-}
-
-/* Keyframes for no-delay, smooth continuous ping-pong scroll on hover */
-@keyframes modelTextPingPong {
-  0% {
-    transform: translateX(0);
-  }
-
-  48% {
-    transform: translateX(var(--scroll-offset, -100px));
-  }
-
-  62% {
-    transform: translateX(var(--scroll-offset, -100px));
-  }
-
-  100% {
-    transform: translateX(0);
-  }
-}
-
-.dropdown-trigger-chevron,
-.thinking-chevron {
+/* Trigger Chevron - Rightmost chevron inside the active model dropdown trigger */
+.dropdown-trigger-chevron {
   color: var(--app-fg);
   flex-shrink: 0;
 }
@@ -1622,12 +1632,12 @@ button:disabled {
   background: var(--app-accent);
 }
 
-/* Circular handle inside boolean toggle switch pill */
+/* Circular Handle - High-contrast toggle thumb inside boolean switch pill */
 .switch-handle {
   width: 12px;
   height: 12px;
   border-radius: 50%;
-  background: #ffffff;
+  background: var(--app-on-accent);
   position: absolute;
   top: 2px;
   left: 2px;
@@ -1693,12 +1703,6 @@ button:disabled {
   display: none;
 }
 
-/* Dropdown item status dot spacing */
-.dropdown-item .status-dot {
-  margin-right: 0;
-  flex-shrink: 0;
-}
-
 /* Empty placeholder text in model dropdown */
 .dropdown-item-placeholder {
   padding: 10px 12px;
@@ -1713,30 +1717,7 @@ button:disabled {
    and text-adjacent chevrons that fade in on hover only.
    ========================================================================== */
 
-/* Settings panel header & container layout - Clean, zero lopsided margins */
-.settings-panel-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 4px 4px;
-  margin-bottom: 2px;
-  border-bottom: 1px solid var(--app-border-subtle);
-  font-size: 0.82rem;
-  font-weight: 600;
-  color: var(--app-fg);
-}
-
-.settings-container,
-.settings-content-panel {
-  box-sizing: border-box;
-  width: 100%;
-  padding: 2px 0;
-  margin: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
+/* Settings Category Wrapper - Rounded accordion card container */
 .settings-category {
   position: relative;
   margin: 0;
@@ -1750,9 +1731,9 @@ button:disabled {
   transition: border-radius 0.25s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.15s ease;
 }
 
-/* When category is expanded, the wrapper gets the card background */
+/* Settings Category (Expanded) - Theme-aware card background for the open accordion */
 .settings-category:not(.collapsed) {
-  background: rgba(255, 255, 255, 0.04);
+  background: var(--app-category-bg);
 }
 
 /* Fully rounded pill-shaped container when category is collapsed */
@@ -1761,9 +1742,8 @@ button:disabled {
   background: transparent;
 }
 
-/* Action button inside settings input row with smooth transition */
-.setting-action-btn,
-.settings-browse-btn {
+/* Settings Action Button - Inline button inside settings input rows */
+.setting-action-btn {
   padding: 4px 10px;
   border-radius: var(--app-radius-sm);
   background: var(--app-surface-strong, rgba(255, 255, 255, 0.06));
@@ -1774,9 +1754,8 @@ button:disabled {
   transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
-/* Action button hover state with spread inset effect */
-.setting-action-btn:hover,
-.settings-browse-btn:hover {
+/* Settings Action Button (Hover) - Outward spread ring on hover */
+.setting-action-btn:hover {
   background: var(--app-surface-hover);
   color: var(--app-fg);
   box-shadow: var(--app-btn-inset);
@@ -1857,14 +1836,45 @@ button:disabled {
   color: var(--app-fg);
 }
 
-/* Setting Item Label & Switch Label - Thinner font weight (400) and soft lighter color */
-.setting-item label,
+/* Setting Item Label & Switch Label - Compact form label and toggle caption */
 .setting-label,
 .switch-label {
   font-size: 0.74rem;
   font-weight: 500;
   color: var(--app-fg);
   margin-bottom: 2px;
+}
+
+/* Muted Setting Label - Secondary form label inside settings items (replaces inline label styles) */
+.setting-item .setting-label--muted {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--app-muted);
+  margin-bottom: 2px;
+}
+
+/* Muted Setting Label (Spaced) - Extra bottom spacing when no subtitle follows */
+.setting-item .setting-label--muted.setting-label--spaced {
+  margin-bottom: 4px;
+}
+
+/* Setting Subtitle (Spaced) - Adds bottom spacing above standalone action buttons */
+.setting-subtitle.setting-subtitle--spaced {
+  margin-bottom: 6px;
+}
+
+/* Setting Input Row - Horizontal flex container pairing a text input with an action button */
+.setting-input-row {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+/* Setting Input Row Field - Flexible input that shrinks cleanly in narrow sidebars */
+.setting-input-row__field {
+  flex: 1;
+  min-width: 0;
 }
 
 .setting-subtitle,
@@ -2221,7 +2231,7 @@ button:disabled {
 /* -----------------------------
    Status / activity indicators
 ------------------------------ */
-/* Static status indicator dot for model connection state */
+/* Static Status Indicator Dot - Connection state indicator inside dropdown and cache status */
 .status-dot {
   width: 6px;
   height: 6px;
@@ -2232,14 +2242,20 @@ button:disabled {
   flex-shrink: 0;
 }
 
-/* Connected status state indicator - solid green dot */
+/* Connected Status Dot - Theme-aware green indicator when model or cache is active */
 .status-dot.status-connected {
-  background: #2ecc71;
+  background: var(--app-status-ok);
 }
 
-/* Disconnected status state indicator - solid red dot */
+/* Disconnected Status Dot - Theme-aware red indicator when model or key is unavailable */
 .status-dot.status-disconnected {
-  background: #e74c3c;
+  background: var(--app-status-error);
+}
+
+/* Dropdown Item Status Dot - Removes right margin where flex gap handles spacing */
+.dropdown-item .status-dot {
+  margin-right: 0;
+  flex-shrink: 0;
 }
 
 /* ==========================================================================
@@ -2543,8 +2559,9 @@ button:disabled {
   font-size: 0.72rem;
 }
 
+/* Tool Status Row (In Progress) - Highlights active tool execution with theme call color */
 .tool-status-row.in-progress {
-  color: #29b6f6;
+  color: var(--app-tool-call-text);
   animation: rowPulse 1.5s infinite ease-in-out;
 }
 
@@ -2552,8 +2569,9 @@ button:disabled {
   color: var(--app-muted);
 }
 
+/* Tool Status Row (Errored) - Highlights failed tool execution with theme error color */
 .tool-status-row.errored {
-  color: #e74c3c;
+  color: var(--app-status-error);
 }
 
 .tool-error-detail {
@@ -2672,12 +2690,15 @@ button:disabled {
   overflow-y: auto;
 }
 
+/* Settings View Container - Outer flex wrapper for collapsible settings categories */
 .settings-container {
   position: relative;
   display: flex;
   flex-direction: column;
+  gap: 8px;
   height: 100%;
   width: 100%;
+  margin: 0;
   padding: 4px 0;
   box-sizing: border-box;
   background: var(--app-bg);
@@ -2713,17 +2734,24 @@ button:disabled {
   font-weight: 600;
 }
 
-.history-list,
-.keys-content-panel {
+/* History List - Scrollable session list container */
+.history-list {
   min-height: 0;
   width: 100%;
 }
 
+/* Settings Content Panel - Scrollable body hosting accordion categories */
 .settings-content-panel {
+  box-sizing: border-box;
   min-height: 0;
   overflow-y: auto;
   flex: 1 1 auto;
   width: 100%;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 10px 14px 16px 14px;
 }
 
 .history-empty-state {
@@ -2800,13 +2828,7 @@ button:disabled {
   margin-left: 4px;
 }
 
-.settings-content-panel {
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-  padding: 10px 14px 16px 14px;
-}
-
+/* Setting Row - Horizontal row for inline toggle or checkbox settings */
 .setting-row {
   display: flex;
   align-items: center;
@@ -2821,6 +2843,7 @@ button:disabled {
   cursor: pointer;
 }
 
+/* Setting Item - Vertical container wrapping a setting label, description, and control */
 .setting-item {
   display: flex;
   flex-direction: column;
@@ -2828,10 +2851,12 @@ button:disabled {
   margin-bottom: 12px;
 }
 
+/* Setting Item Label - Default label typography inside settings blocks */
 .setting-item label {
   color: var(--app-fg);
   font-size: 0.8rem;
   font-weight: 500;
+  margin-bottom: 2px;
 }
 
 .setting-item :is(select, input[type="password"], input[type="text"]) {
@@ -2858,7 +2883,10 @@ button:disabled {
   border-left: 1px solid var(--app-border-subtle);
 }
 
+/* Keys Content Panel - Scrollable list of external provider API key cards */
 .keys-content-panel {
+  min-height: 0;
+  width: 100%;
   display: flex;
   flex-direction: column;
   gap: 12px;
@@ -2952,73 +2980,24 @@ button:disabled {
   justify-content: center;
 }
 
-.html-icon {
-  color: #e44d26;
-}
-
-.css-icon {
-  color: #42a5f5;
-}
-
-.js-icon {
-  color: #f7df1e;
-}
-
-.ts-icon {
-  color: #3178c6;
-}
-
-.json-icon {
-  color: #cbcb41;
-}
-
-.md-icon {
-  color: #42a5f5;
-}
-
-.py-icon {
-  color: #3776ab;
-}
-
-.lang-icon {
-  color: #a29bfe;
-}
-
-.term-icon {
-  color: #2ecc71;
-}
-
-.db-icon {
-  color: #e67e22;
-}
-
-.config-icon {
-  color: #b2bec3;
-}
-
-.media-icon {
-  color: #fd79a8;
-}
-
-.pdf-icon {
-  color: #e74c3c;
-}
-
-.zip-icon {
-  color: #fdcb6e;
-}
-
-.lock-icon {
-  color: #e74c3c;
-}
-
-.git-icon {
-  color: #f14e32;
-}
-
-.docker-icon {
-  color: #2496ed;
-}
+/* File Type Icons - Brand colors mapped from :root file palette tokens */
+.html-icon { color: var(--file-icon-html); }
+.css-icon { color: var(--file-icon-css); }
+.js-icon { color: var(--file-icon-js); }
+.ts-icon { color: var(--file-icon-ts); }
+.json-icon { color: var(--file-icon-json); }
+.md-icon { color: var(--file-icon-md); }
+.py-icon { color: var(--file-icon-py); }
+.lang-icon { color: var(--file-icon-lang); }
+.term-icon { color: var(--file-icon-term); }
+.db-icon { color: var(--file-icon-db); }
+.config-icon { color: var(--file-icon-config); }
+.media-icon { color: var(--file-icon-media); }
+.pdf-icon { color: var(--file-icon-pdf); }
+.zip-icon { color: var(--file-icon-zip); }
+.lock-icon { color: var(--file-icon-lock); }
+.git-icon { color: var(--file-icon-git); }
+.docker-icon { color: var(--file-icon-docker); }
 
 .default-file-icon {
   color: var(--app-muted);
@@ -3117,6 +3096,7 @@ details[open]>summary>.custom-chevron {
 /* -----------------------------
    LM Studio Cache Directory & Status
 ------------------------------ */
+/* Settings Browse Button - Directory picker button with synchronous hover-ring transition */
 .settings-browse-btn {
   height: 26px;
   padding: 0 10px;
@@ -3128,12 +3108,14 @@ details[open]>summary>.custom-chevron {
   font-weight: 500;
   cursor: pointer;
   white-space: nowrap;
-  transition: background-color 0.15s ease;
+  transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
+/* Settings Browse Button (Hover) - Outward spread ring matching unified action buttons */
 .settings-browse-btn:hover {
   background: var(--app-surface-hover, #37373d);
   color: var(--app-fg, #ffffff);
+  box-shadow: var(--app-btn-inset);
 }
 
 .cache-status-indicator {
@@ -3144,10 +3126,21 @@ details[open]>summary>.custom-chevron {
   font-size: 0.72rem;
 }
 
+/* Cache Status Text - Default muted state for LM Studio cache verification */
 .cache-status-text {
   color: var(--app-muted, #888888);
   font-size: 0.72rem;
   word-break: break-all;
+}
+
+/* Cache Status Text (Success) - Green confirmation once LM Studio cache is found */
+.cache-status-text.is-success {
+  color: var(--app-status-ok);
+}
+
+/* Cache Status Text (Error) - Red notice when LM Studio cache path is missing */
+.cache-status-text.is-error {
+  color: var(--app-status-error);
 }
 
 /* --------------------------------------------------------------------------
@@ -3178,16 +3171,17 @@ details[open]>summary>.custom-chevron {
   backdrop-filter: blur(2px);
 }
 
+/* Help Modal Card - Floating dialog with visible edge on light themes and narrow panels */
 .help-modal-card {
   position: relative;
   z-index: 2001;
   width: 100%;
-  max-width: 420px;
+  max-width: min(420px, calc(100vw - 12px));
   max-height: 85vh;
   display: flex;
   flex-direction: column;
   background: var(--app-bg, #1e1e1e);
-  border: 1px solid var(--app-border-strong, #3c3c3c);
+  border: 1px solid var(--app-modal-border);
   border-radius: var(--app-radius-lg, 8px);
   box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
   overflow: hidden;
@@ -3436,6 +3430,7 @@ details[open]>summary>.custom-chevron {
   color: var(--app-muted);
 }
 
+/* Plan Proceed Button - Primary accent CTA inside rendered implementation plan cards */
 .btn-proceed {
   display: inline-flex;
   align-items: center;
@@ -3444,7 +3439,7 @@ details[open]>summary>.custom-chevron {
   padding: 5px 12px;
   border-radius: var(--app-radius-sm);
   background: var(--app-accent);
-  color: #ffffff;
+  color: var(--app-on-accent);
   font-family: var(--app-font);
   font-size: 0.78rem;
   font-weight: 500;
@@ -3479,8 +3474,9 @@ details[open]>summary>.custom-chevron {
   opacity: 1;
 }
 
+/* Icon Button (Copied Feedback) - Green confirmation state after copy action */
 .icon-btn.copied {
-  color: #4caf50;
+  color: var(--app-status-ok);
 }
 
 .message-info-container {
@@ -3742,17 +3738,19 @@ details[open]>summary>.custom-chevron {
   color: var(--app-fg);
 }
 
+/* Inline Editor Send Button - Primary accent fill with high-contrast label */
 .inline-action-btn.inline-send-btn {
   background: var(--app-accent);
-  color: #ffffff;
+  color: var(--app-on-accent);
 }
 
 .inline-action-btn.inline-send-btn:hover {
   background: var(--app-accent-hover);
 }
 
+/* Inline Editor Cancel Button (Hover) - Destructive red tint on hover */
 .inline-action-btn.inline-cancel-btn:hover {
-  color: #ff6b6b;
+  color: var(--app-status-error);
   background: rgba(255, 107, 107, 0.15);
 }
 
@@ -3788,7 +3786,7 @@ details[open]>summary>.custom-chevron {
   border-left: 3px solid var(--app-accent, #38bdf8);
   font-size: 0.75rem;
   margin: 0;
-  max-height: var(--app-thinking-max-height, 220px);
+  max-height: var(--app-raw-thinking-max-height, 220px);
   overflow-y: auto;
 }
 
@@ -3834,37 +3832,9 @@ details[open]>summary>.custom-chevron {
   color: var(--app-fg);
 }
 
+/* Copy Code Button (Copied Feedback) - Green confirmation state after copying snippet */
 .copy-code-btn.copied {
-  color: #4caf50;
-}
-
-/* -----------------------------
-   Status / activity indicators
------------------------------- */
-/* Static status indicator dot for model connection state */
-.status-dot {
-  width: 6px;
-  height: 6px;
-  display: inline-block;
-  margin-right: 6px;
-  border-radius: 50%;
-  background: currentColor;
-  flex-shrink: 0;
-}
-
-/* Connected status state indicator - solid green dot */
-.status-dot.status-connected {
-  background: #2ecc71;
-}
-
-/* Disconnected status state indicator - solid red dot */
-.status-dot.status-disconnected {
-  background: #e74c3c;
-}
-
-.dropdown-item .status-dot {
-  margin-right: 0;
-  flex-shrink: 0;
+  color: var(--app-status-ok);
 }
 
 /* Card container for missing API key warning notifications in chat */
@@ -3999,7 +3969,7 @@ details[open]>summary>.custom-chevron {
   display: flex;
   align-items: center;
   gap: 8px;
-  color: var(--app-fg-muted);
+  color: var(--app-muted);
   font-size: var(--app-font-xs);
   font-weight: 600;
   text-transform: uppercase;

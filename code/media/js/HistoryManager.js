@@ -76,7 +76,7 @@ class HistoryManager {
             return;
         }
 
-        const chatSvg = `<svg class="history-item-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>`;
+        const chatSvg = DOMUtils.icon('ask_mode', 13, { className: 'history-item-icon' });
 
         chats.forEach(chat => {
             const item = document.createElement('div');
@@ -105,7 +105,8 @@ class HistoryManager {
             const deleteBtn = document.createElement('button');
             deleteBtn.className = 'icon-btn icon-btn--delete';
             deleteBtn.title = 'Delete Chat';
-            deleteBtn.innerHTML = window.KAI_SVGS['delete'] || '✕';
+            deleteBtn.setAttribute('aria-label', 'Delete Chat');
+            deleteBtn.innerHTML = DOMUtils.icon('delete', 12);
             
             deleteBtn.addEventListener('click', (e) => {
                 e.stopPropagation();

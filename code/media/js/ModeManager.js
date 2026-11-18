@@ -29,16 +29,17 @@ class ModeManager {
 
         this.modeLabels = { ask: 'Ask', agent: 'Agent', planning: 'Plan' };
         this.modeIcons = {
-            ask: '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>',
-            agent: '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>',
-            planning: '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect></svg>'
+            ask: DOMUtils.icon('ask_mode', 13),
+            agent: DOMUtils.icon('agent_mode', 13),
+            planning: DOMUtils.icon('plan_mode', 13)
         };
 
         this.initEventListeners();
     }
 
     /**
-     * Updates active mode, persists to localStorage, and updates UI placeholders and icons.
+     * Updates active mode, persists state, and toggles .active class on the matching mode option button.
+     * Mutates appState.activeMode and #mode-opt-ask / #mode-opt-agent / #mode-opt-planning classes.
      * @param {'ask'|'agent'|'planning'} mode Target mode.
      */
     setActiveMode(mode) {
@@ -46,7 +47,7 @@ class ModeManager {
         this.appState.activeMode = mode;
         this.appState.isPlanningModeEnabled = (mode === 'planning');
 
-        const modeOptAsk = document.getElementById('mode-opt-chat');
+        const modeOptAsk = document.getElementById('mode-opt-ask');
         const modeOptAgent = document.getElementById('mode-opt-agent');
         const modeOptPlanning = document.getElementById('mode-opt-planning');
 
@@ -101,42 +102,48 @@ class ModeManager {
     }
 
     /**
-     * Registers context mode selector click events.
+     * Registers context mode selector click events and keeps aria-expanded synced on #at-mention-trigger-btn.
+     * Mutates #context-options-menu visibility and #at-mention-trigger-btn ARIA attributes.
      * @private
      */
     initEventListeners() {
         const modeOptAgent = document.getElementById('mode-opt-agent');
         const modeOptAsk = document.getElementById('mode-opt-ask');
         const modeOptPlanning = document.getElementById('mode-opt-planning');
+        const closeMenu = () => {
+            if (this.contextOptionsMenu) this.contextOptionsMenu.classList.add('hidden');
+            if (this.atMentionTriggerBtn) this.atMentionTriggerBtn.setAttribute('aria-expanded', 'false');
+        };
 
         if (modeOptAgent) {
             modeOptAgent.addEventListener('click', () => {
                 this.setActiveMode('agent');
-                if (this.contextOptionsMenu) this.contextOptionsMenu.classList.add('hidden');
+                closeMenu();
             });
         }
         if (modeOptAsk) {
             modeOptAsk.addEventListener('click', () => {
                 this.setActiveMode('ask');
-                if (this.contextOptionsMenu) this.contextOptionsMenu.classList.add('hidden');
+                closeMenu();
             });
         }
         if (modeOptPlanning) {
             modeOptPlanning.addEventListener('click', () => {
                 this.setActiveMode('planning');
-                if (this.contextOptionsMenu) this.contextOptionsMenu.classList.add('hidden');
+                closeMenu();
             });
         }
 
         if (this.atMentionTriggerBtn && this.contextOptionsMenu) {
             this.atMentionTriggerBtn.addEventListener('click', (e) => {
                 e.stopPropagation();
-                this.contextOptionsMenu.classList.toggle('hidden');
+                const isHidden = this.contextOptionsMenu.classList.toggle('hidden');
+                this.atMentionTriggerBtn.setAttribute('aria-expanded', isHidden ? 'false' : 'true');
             });
 
             document.addEventListener('click', (e) => {
                 if (!this.contextOptionsMenu.contains(e.target) && !this.atMentionTriggerBtn.contains(e.target)) {
-                    this.contextOptionsMenu.classList.add('hidden');
+                    closeMenu();
                 }
             });
         }

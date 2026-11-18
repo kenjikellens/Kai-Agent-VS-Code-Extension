@@ -44,7 +44,8 @@ class AssistantMessageBubble {
         copyBtn.type = 'button';
         copyBtn.className = 'icon-btn copy-msg-btn';
         copyBtn.title = 'Copy response';
-        copyBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>';
+        copyBtn.setAttribute('aria-label', 'Copy response');
+        copyBtn.innerHTML = DOMUtils.icon('copy_response', 14);
         copyBtn.addEventListener('click', () => {
             const textToCopy = rawText || assistantRow.dataset.rawContent || assistantRow.innerText;
             navigator.clipboard.writeText(textToCopy);
@@ -58,7 +59,8 @@ class AssistantMessageBubble {
             retryBtn.type = 'button';
             retryBtn.className = 'icon-btn retry-msg-btn';
             retryBtn.title = 'Retry turn';
-            retryBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"></polyline><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path></svg>';
+            retryBtn.setAttribute('aria-label', 'Retry turn');
+            retryBtn.innerHTML = DOMUtils.icon('retry', 14);
             retryBtn.addEventListener('click', () => onRetry(assistantRow));
             actionsDiv.appendChild(retryBtn);
         }

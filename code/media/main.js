@@ -402,6 +402,42 @@
         // Start periodic server connection health checks
         ipcBridge.checkConnection();
         setInterval(() => ipcBridge.checkConnection(), 15000);
+
+        /**
+         * Global Escape key handler that dismisses open dropdowns first, or closes the topmost view overlay (Keys, Settings, History).
+         * Respects HelpModalController and active ask-user docks without duplicating view state.
+         */
+        document.addEventListener('keydown', (e) => {
+            if (e.key !== 'Escape') return;
+            if (helpModalController && helpModalController.isOpen()) return;
+            if (document.querySelector('#ask-user-dock:not(.hidden)')) return;
+
+            const openDropdown = document.querySelector('.dropdown-menu:not(.hidden)');
+            if (openDropdown) {
+                document.querySelectorAll('.dropdown-menu:not(.hidden)').forEach((menu) => menu.classList.add('hidden'));
+                modelDropdownController.closeActiveFlyoutImmediately();
+                const modelTrigger = document.getElementById('dropdown-trigger-btn');
+                const modeTrigger = document.getElementById('at-mention-trigger-btn');
+                if (modelTrigger) modelTrigger.setAttribute('aria-expanded', 'false');
+                if (modeTrigger) modeTrigger.setAttribute('aria-expanded', 'false');
+                return;
+            }
+
+            const keysEl = document.getElementById('keys-container');
+            if (keysEl && !keysEl.classList.contains('hidden')) {
+                document.getElementById('close-keys-btn')?.click();
+                return;
+            }
+            const settingsEl = document.getElementById('settings-container');
+            if (settingsEl && !settingsEl.classList.contains('hidden')) {
+                document.getElementById('close-settings-btn')?.click();
+                return;
+            }
+            const historyEl = document.getElementById('history-container');
+            if (historyEl && !historyEl.classList.contains('hidden')) {
+                document.getElementById('close-history-btn')?.click();
+            }
+        });
     } catch (err) {
         console.error('[KAI Extension Error] Failed to initialize webview:', err);
     }

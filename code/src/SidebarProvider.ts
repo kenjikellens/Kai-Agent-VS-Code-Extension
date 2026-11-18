@@ -703,8 +703,34 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
     }
 
     /**
+     * Renders a standalone SVG asset from the loaded icon map with normalized pixel dimensions and optional class/stroke overrides.
+     * Eliminates inline SVG markup from the webview HTML template without mutating the loaded asset map.
+     */
+    private _renderSvg(
+        svgs: Record<string, string>,
+        name: string,
+        size: number,
+        opts?: { className?: string; strokeWidth?: number }
+    ): string {
+        let raw = svgs[name] || '';
+        if (!raw) return '';
+        raw = raw.replace(/\swidth="[^"]*"/, ` width="${size}"`).replace(/\sheight="[^"]*"/, ` height="${size}"`);
+        if (opts?.strokeWidth !== undefined) {
+            raw = raw.replace(/\sstroke-width="[^"]*"/, ` stroke-width="${opts.strokeWidth}"`);
+        }
+        if (opts?.className !== undefined) {
+            if (/\sclass="[^"]*"/.test(raw)) {
+                raw = raw.replace(/\sclass="[^"]*"/, opts.className ? ` class="${opts.className}"` : '');
+            } else if (opts.className) {
+                raw = raw.replace('<svg', `<svg class="${opts.className}"`);
+            }
+        }
+        return raw;
+    }
+
+    /**
      * Compiles and returns the full HTML string for the webview.
-     * Links CSS/JS files and configures Content Security Policy.
+     * Replaces inline styles/SVGs with design-system classes, standalone SVG assets, ARIA labels, and localized strings.
      * @param webview The webview instance.
      * @returns The HTML document string.
      */
@@ -779,14 +805,14 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
                     <!-- Container 1: Minimalist Top Bar -->
                     <div class="sidebar-header">
                         <div class="header-actions">
-                            <button id="new-chat-btn" class="icon-btn icon-btn--header" title="${translations.newChat}">
-                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                            <button id="new-chat-btn" class="icon-btn icon-btn--header" title="${translations.newChat}" aria-label="${translations.newChat}">
+                                ${this._renderSvg(svgs, 'plus', 15, { strokeWidth: 2.5 })}
                             </button>
-                            <button id="history-btn" class="icon-btn icon-btn--header" title="${translations.history}">
-                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                            <button id="history-btn" class="icon-btn icon-btn--header" title="${translations.history}" aria-label="${translations.history}">
+                                ${this._renderSvg(svgs, 'get_time', 15, { strokeWidth: 2.5 })}
                             </button>
-                            <button id="settings-btn" class="icon-btn icon-btn--header" title="${translations.settings}">
-                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                            <button id="settings-btn" class="icon-btn icon-btn--header" title="${translations.settings}" aria-label="${translations.settings}">
+                                ${this._renderSvg(svgs, 'settings', 15)}
                             </button>
                         </div>
                     </div>
@@ -806,7 +832,7 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
                                     <div class="input-toolbar">
                                          <div class="toolbar-left">
                                             <!-- FILE UPLOAD ATTACHMENT BUTTON -->
-                                            <button type="button" class="icon-btn icon-btn--toolbar" id="attach-file-btn" title="${translations.uploadFile}">
+                                            <button type="button" class="icon-btn icon-btn--toolbar" id="attach-file-btn" title="${translations.uploadFile}" aria-label="${translations.uploadFile}">
                                                 ${svgs.plus || ''}
                                             </button>
 
@@ -816,12 +842,12 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
                                                 Options inside are dynamically created interactive button items (.dropdown-item).
                                             -->
                                             <div class="custom-dropdown" id="model-dropdown-container">
-                                                <button type="button" class="dropdown-trigger" id="dropdown-trigger-btn" title="Active Model">
+                                                <button type="button" class="dropdown-trigger" id="dropdown-trigger-btn" title="${translations.activeModel || 'Active Model'}" aria-haspopup="listbox" aria-expanded="false">
                                                     <span id="status-dot" class="status-dot status-disconnected"></span>
                                                     <div id="selected-model-text-container" class="model-text-container">
                                                         <span id="selected-model-text" class="model-text-inner">${translations.selectModel || 'Select Model'}</span>
                                                     </div>
-                                                    <svg class="dropdown-trigger-chevron" width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                                                    ${this._renderSvg(svgs, 'chevron_down', 8, { className: 'dropdown-trigger-chevron', strokeWidth: 3 })}
                                                 </button>
                                                 <div class="dropdown-menu hidden" id="dropdown-options-menu">
                                                     <!-- Dynamically populated with model option buttons -->
@@ -834,31 +860,31 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
                                                 Dropdown containing mode options: Agent, Ask, Plan.
                                             -->
                                             <div class="custom-dropdown" id="context-options-dropdown-container">
-                                                <button type="button" class="icon-btn icon-btn--toolbar" id="at-mention-trigger-btn" title="Modes & Capabilities (@)">
+                                                <button type="button" class="icon-btn icon-btn--toolbar" id="at-mention-trigger-btn" title="${translations.modesAndCapabilities || 'Modes & Capabilities (@)'}" aria-label="${translations.modesAndCapabilities || 'Modes & Capabilities (@)'}" aria-haspopup="menu" aria-expanded="false">
                                                     ${svgs.at || ''}
                                                 </button>
                                                 <div class="dropdown-menu hidden" id="context-options-menu">
                                                     <div class="context-options-header">
-                                                        <span>Select Mode</span>
+                                                        <span>${translations.selectMode || 'Select Mode'}</span>
                                                     </div>
                                                     <div class="context-modes-list" id="context-mode-selector">
-                                                        <button type="button" class="context-mode-item active" id="mode-opt-agent" data-mode="agent" title="Autonomous code editing and tool execution">
-                                                            <span class="mode-icon">${svgs.agent_mode || '<svg class="mode-item-svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>'}</span>
-                                                            <span>Agent</span>
+                                                        <button type="button" class="context-mode-item active" id="mode-opt-agent" data-mode="agent" title="${translations.modeAgentDesc || 'Autonomous code editing and tool execution'}">
+                                                            <span class="mode-icon">${this._renderSvg(svgs, 'agent_mode', 14, { className: 'mode-item-svg' })}</span>
+                                                            <span>${translations.modeAgent || 'Agent'}</span>
                                                         </button>
-                                                        <button type="button" class="context-mode-item" id="mode-opt-ask" data-mode="ask" title="Read-only workspace exploration and Q&A">
-                                                            <span class="mode-icon">${svgs.ask_mode || '<svg class="mode-item-svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>'}</span>
-                                                            <span>Ask</span>
+                                                        <button type="button" class="context-mode-item" id="mode-opt-ask" data-mode="ask" title="${translations.modeAskDesc || 'Read-only workspace exploration and Q&A'}">
+                                                            <span class="mode-icon">${this._renderSvg(svgs, 'ask_mode', 14, { className: 'mode-item-svg' })}</span>
+                                                            <span>${translations.modeAsk || 'Ask'}</span>
                                                         </button>
-                                                        <button type="button" class="context-mode-item" id="mode-opt-planning" data-mode="planning" title="Structured plan-first protocol before code edits">
-                                                            <span class="mode-icon">${svgs.plan_mode || '<svg class="mode-item-svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect></svg>'}</span>
-                                                            <span>Plan</span>
+                                                        <button type="button" class="context-mode-item" id="mode-opt-planning" data-mode="planning" title="${translations.modePlanDesc || 'Structured plan-first protocol before code edits'}">
+                                                            <span class="mode-icon">${this._renderSvg(svgs, 'plan_mode', 14, { className: 'mode-item-svg' })}</span>
+                                                            <span>${translations.modePlan || 'Plan'}</span>
                                                         </button>
                                                     </div>
                                                 </div>
                                             </div>
-                                            <button id="send-btn" title="Send message">
-                                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+                                            <button id="send-btn" title="${translations.sendMessage || 'Send message'}" aria-label="${translations.sendMessage || 'Send message'}">
+                                                ${this._renderSvg(svgs, 'send', 12, { strokeWidth: 2.5 })}
                                             </button>
                                         </div>
                                     </div>
@@ -870,7 +896,7 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
                         <div id="history-container" class="content-view history-container hidden">
                             <div class="history-panel-header">
                                 <span>${translations.previousChats}</span>
-                                <button id="close-history-btn" class="icon-btn icon-btn--header" title="Close History">✕</button>
+                                <button id="close-history-btn" class="icon-btn icon-btn--header" title="${translations.closeHistory || 'Close History'}" aria-label="${translations.closeHistory || 'Close History'}">${this._renderSvg(svgs, 'close', 14)}</button>
                             </div>
                             <div id="history-list" class="history-list"></div>
                         </div>
@@ -879,22 +905,22 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
                         <div id="settings-container" class="content-view settings-container hidden">
                             <div class="settings-panel-header">
                                 <span>${translations.settings}</span>
-                                <button id="close-settings-btn" class="icon-btn icon-btn--header" title="Close Settings">✕</button>
+                                <button id="close-settings-btn" class="icon-btn icon-btn--header" title="${translations.closeSettings || 'Close Settings'}" aria-label="${translations.closeSettings || 'Close Settings'}">${this._renderSvg(svgs, 'close', 14)}</button>
                             </div>
                             <div class="settings-content-panel">
                                 <!-- CATEGORY 1: GENERAL SETTINGS -->
                                 <div class="settings-category" id="category-general">
                                     <button type="button" class="category-header-btn" data-category="general">
                                         <span class="category-title">${translations.generalSettings || 'General Settings'}</span>
-                                        <svg class="category-chevron" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                                        ${this._renderSvg(svgs, 'chevron_down', 10, { className: 'category-chevron', strokeWidth: 2.5 })}
                                     </button>
                                     <div class="category-content">
                                         <div class="setting-item">
-                                            <label for="language-select-container" style="font-size: 0.75rem; color: var(--app-muted); margin-bottom: 4px; display: block;">${translations.language}</label>
+                                            <label for="language-select-container" class="setting-label--muted setting-label--spaced">${translations.language}</label>
                                             <div id="language-select-container"></div>
                                         </div>
                                         <div class="setting-item">
-                                            <label for="stream-settle-delay-select-container" style="font-size: 0.75rem; color: var(--app-muted); margin-bottom: 2px; display: block;">${translations.streamSettleDelay || 'Stream Lookahead Delay'}</label>
+                                            <label for="stream-settle-delay-select-container" class="setting-label--muted">${translations.streamSettleDelay || 'Stream Lookahead Delay'}</label>
                                             <span class="setting-subtitle">${translations.streamSettleDelayDesc || 'Buffer delay before streaming markdown formatting settles into the DOM'}</span>
                                             <div id="stream-settle-delay-select-container"></div>
                                         </div>
@@ -905,19 +931,19 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
                                 <div class="settings-category" id="category-lmstudio">
                                     <button type="button" class="category-header-btn" data-category="lmstudio">
                                         <span class="category-title">${translations.lmStudioHeader || 'LM Studio'}</span>
-                                        <svg class="category-chevron" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                                        ${this._renderSvg(svgs, 'chevron_down', 10, { className: 'category-chevron', strokeWidth: 2.5 })}
                                     </button>
                                     <div class="category-content">
                                         <div class="setting-item">
-                                            <label for="settings-server-url" style="font-size: 0.75rem; color: var(--app-muted); margin-bottom: 2px; display: block;">${translations.serverUrl || 'Server URL'}</label>
+                                            <label for="settings-server-url" class="setting-label--muted">${translations.serverUrl || 'Server URL'}</label>
                                             <span class="setting-subtitle">${translations.serverUrlDesc || 'Local endpoint of the LM Studio API server (default http://localhost:1234/v1)'}</span>
                                             <input type="text" id="settings-server-url" placeholder="http://localhost:1234/v1" />
                                         </div>
                                         <div class="setting-item">
-                                            <label for="settings-lmstudio-path" style="font-size: 0.75rem; color: var(--app-muted); margin-bottom: 2px; display: block;">${translations.lmStudioDirectory || 'LM Studio Directory'}</label>
+                                            <label for="settings-lmstudio-path" class="setting-label--muted">${translations.lmStudioDirectory || 'LM Studio Directory'}</label>
                                             <span class="setting-subtitle">${translations.lmStudioDirectoryDesc || 'Path to the local LM Studio cache directory for model detection'}</span>
-                                            <div style="display: flex; gap: 6px; align-items: center;">
-                                                <input type="text" id="settings-lmstudio-path" style="flex: 1;" placeholder="Auto-detected (~/.cache/lm-studio, ~/.lmstudio)" />
+                                            <div class="setting-input-row">
+                                                <input type="text" id="settings-lmstudio-path" class="setting-input-row__field" placeholder="Auto-detected (~/.cache/lm-studio, ~/.lmstudio)" />
                                                 <button type="button" id="browse-lmstudio-path-btn" class="settings-browse-btn">${translations.browse || 'Browse...'}</button>
                                             </div>
                                             <div id="lmstudio-cache-status-indicator" class="cache-status-indicator">
@@ -932,7 +958,7 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
                                 <div class="settings-category" id="category-thinking">
                                     <button type="button" class="category-header-btn" data-category="thinking">
                                         <span class="category-title">${translations.thinkingSettings || 'Thinking & Reasoning'}</span>
-                                        <svg class="category-chevron" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                                        ${this._renderSvg(svgs, 'chevron_down', 10, { className: 'category-chevron', strokeWidth: 2.5 })}
                                     </button>
                                     <div class="category-content">
                                         <div class="setting-item">
@@ -954,10 +980,10 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
                                 <div class="settings-category" id="category-apikeys">
                                     <button type="button" class="category-header-btn" data-category="apikeys">
                                         <span class="category-title">${translations.externalProvidersHeader || 'External AI Providers'}</span>
-                                        <svg class="category-chevron" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                                        ${this._renderSvg(svgs, 'chevron_down', 10, { className: 'category-chevron', strokeWidth: 2.5 })}
                                     </button>
                                     <div class="category-content">
-                                        <span class="setting-subtitle" style="margin-bottom: 6px;">${translations.apiKeysSettingsDesc || 'Manage API keys and test live connections for cloud models'}</span>
+                                        <span class="setting-subtitle setting-subtitle--spaced">${translations.apiKeysSettingsDesc || 'Manage API keys and test live connections for cloud models'}</span>
                                         <div class="setting-item" id="manage-keys-container">
                                             <button type="button" class="btn btn--primary" id="manage-keys-btn">
                                                 ${svgs.manage_keys || ''}
@@ -972,7 +998,7 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
                             <div id="keys-container" class="keys-container hidden">
                                 <div class="keys-panel-header">
                                     <span>${translations.externalProviderApiKeys || 'External Provider API Keys'}</span>
-                                    <button id="close-keys-btn" class="icon-btn icon-btn--header" title="${translations.close || 'Close'}">✕</button>
+                                    <button id="close-keys-btn" class="icon-btn icon-btn--header" title="${translations.close || 'Close'}" aria-label="${translations.close || 'Close'}">${this._renderSvg(svgs, 'close', 14)}</button>
                                 </div>
                                 <div class="keys-content-panel">
                                     <!-- Dynamic provider key inputs rendered here -->

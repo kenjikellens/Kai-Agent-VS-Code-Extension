@@ -384,7 +384,7 @@ export class AgentExecutor {
         if (stoppedAtIterationLimit) {
             const warning = `The agent stopped after ${maxIterations} tool steps. The latest changes were kept, but verification may be incomplete.`;
             this.onProgress({ type: 'agent_warning', output: warning });
-            lastAssistantResponse += `\n\n⚠ ${warning}`;
+            lastAssistantResponse += `\n\nWarning: ${warning}`;
         }
 
         // Append the final assistant response to the message history

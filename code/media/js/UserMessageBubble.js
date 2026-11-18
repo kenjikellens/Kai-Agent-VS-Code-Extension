@@ -29,7 +29,8 @@ class UserMessageBubble {
         copyBtn.type = 'button';
         copyBtn.className = 'icon-btn copy-msg-btn';
         copyBtn.title = 'Copy prompt';
-        copyBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>';
+        copyBtn.setAttribute('aria-label', 'Copy prompt');
+        copyBtn.innerHTML = DOMUtils.icon('copy_response', 14);
         copyBtn.addEventListener('click', () => {
             navigator.clipboard.writeText(text);
             copyBtn.classList.add('copied');
@@ -42,7 +43,8 @@ class UserMessageBubble {
             editBtn.type = 'button';
             editBtn.className = 'icon-btn edit-msg-btn';
             editBtn.title = 'Edit prompt';
-            editBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>';
+            editBtn.setAttribute('aria-label', 'Edit prompt');
+            editBtn.innerHTML = DOMUtils.icon('edit_file', 14);
             editBtn.addEventListener('click', () => options.onEdit(row, text));
             actionsDiv.appendChild(editBtn);
         }

@@ -47,36 +47,28 @@ class ModelDropdownController {
     }
 
     /**
-     * Checks text overflow for all .model-text-container elements and calculates
-     * the exact scroll distance and speed duration needed for the ping-pong hover loop.
+     * Checks truncated model labels in .model-text-container elements and attaches native title tooltips.
+     * Updates #dropdown-trigger-btn tooltip dynamically and preserves model item size tooltips without transform-based marquee styles.
      */
     updateTextOverflowMetrics() {
         const containers = document.querySelectorAll('.model-text-container');
+        const i18n = (typeof window !== 'undefined' && window.KAI_I18N) || {};
 
         containers.forEach(container => {
             const innerSpan = container.querySelector('.model-text-inner');
             if (!innerSpan) return;
 
-            innerSpan.style.flexShrink = '0';
+            const host = container.closest('.dropdown-trigger, .dropdown-item');
+            const fullText = (innerSpan.textContent || '').trim();
+            const isOverflowing = innerSpan.scrollWidth > container.clientWidth + 2;
 
-            const containerWidth = container.clientWidth;
-            const contentWidth = innerSpan.scrollWidth;
-            const overflowAmount = contentWidth - containerWidth;
+            container.classList.toggle('has-overflow', isOverflowing);
+            if (!host || !fullText) return;
 
-            if (overflowAmount > 2) {
-                container.classList.add('has-overflow');
-                const targetOffset = -(overflowAmount + 8);
-                const basePauseTime = 1.2;
-                const travelSpeed = 22;
-                const travelTime = (2 * Math.abs(targetOffset)) / travelSpeed;
-                const duration = Math.min(24, Math.max(4.5, basePauseTime + travelTime)).toFixed(2);
-
-                container.style.setProperty('--scroll-offset', `${targetOffset}px`);
-                container.style.setProperty('--scroll-duration', `${duration}s`);
-            } else {
-                container.classList.remove('has-overflow');
-                container.style.removeProperty('--scroll-offset');
-                container.style.removeProperty('--scroll-duration');
+            if (host.id === 'dropdown-trigger-btn') {
+                host.title = isOverflowing ? fullText : (i18n.activeModel || 'Active Model');
+            } else if (!host.title) {
+                host.title = fullText;
             }
         });
     }
@@ -102,7 +94,7 @@ class ModelDropdownController {
 
     /**
      * Registers dropdown trigger and global click-outside listeners for the Model Selector Dropdown.
-     * Manages mutual exclusion and dismissal of open menus and flyouts.
+     * Syncs aria-expanded on #dropdown-trigger-btn and dismisses open menus and flyouts.
      */
     initEventListeners() {
         if (this.dropdownTriggerBtn) {
@@ -110,7 +102,8 @@ class ModelDropdownController {
                 e.stopPropagation();
                 this.closeActiveFlyoutImmediately();
                 if (this.dropdownOptionsMenu) {
-                    this.dropdownOptionsMenu.classList.toggle('hidden');
+                    const isHidden = this.dropdownOptionsMenu.classList.toggle('hidden');
+                    this.dropdownTriggerBtn.setAttribute('aria-expanded', isHidden ? 'false' : 'true');
                 }
             });
         }
@@ -119,39 +112,11 @@ class ModelDropdownController {
             if (!e.target.closest('#model-dropdown-container') && this.dropdownOptionsMenu) {
                 this.closeActiveFlyoutImmediately();
                 this.dropdownOptionsMenu.classList.add('hidden');
+                if (this.dropdownTriggerBtn) {
+                    this.dropdownTriggerBtn.setAttribute('aria-expanded', 'false');
+                }
             }
         });
-
-        // Global mouseover delegation listener to calculate overflow & trigger ping-pong scroll instantly on hover
-        document.addEventListener('mouseover', (e) => {
-            const targetContainer = e.target.closest('.model-text-container') || e.target.closest('.dropdown-trigger') || e.target.closest('.dropdown-item');
-            if (!targetContainer) return;
-
-            const container = targetContainer.classList.contains('model-text-container') ? targetContainer : targetContainer.querySelector('.model-text-container');
-            if (!container) return;
-
-            const innerSpan = container.querySelector('.model-text-inner');
-            if (!innerSpan) return;
-
-            innerSpan.style.flexShrink = '0';
-            const containerWidth = container.clientWidth;
-            const contentWidth = innerSpan.scrollWidth;
-            const overflowAmount = contentWidth - containerWidth;
-
-            if (overflowAmount > 2) {
-                container.classList.add('has-overflow');
-                const targetOffset = -(overflowAmount + 8);
-                const basePauseTime = 1.2;
-                const travelSpeed = 22;
-                const travelTime = (2 * Math.abs(targetOffset)) / travelSpeed;
-                const duration = Math.min(24, Math.max(4.5, basePauseTime + travelTime)).toFixed(2);
-
-                container.style.setProperty('--scroll-offset', `${targetOffset}px`);
-                container.style.setProperty('--scroll-duration', `${duration}s`);
-            } else {
-                container.classList.remove('has-overflow');
-            }
-        }, true);
     }
 
     /**
@@ -501,7 +466,7 @@ class ModelDropdownController {
 
                     const checkmark = document.createElement('span');
                     checkmark.className = 'check-icon';
-                    checkmark.textContent = isSelected ? '✓' : '';
+                    checkmark.innerHTML = isSelected ? DOMUtils.icon('check', 11, { strokeWidth: 2.5 }) : '';
                     optItem.appendChild(checkmark);
 
                     const handleEffortSelect = (e) => {
@@ -522,12 +487,12 @@ class ModelDropdownController {
                             el.classList.remove('selected');
                             el.setAttribute('aria-checked', 'false');
                             const chk = el.querySelector('.check-icon');
-                            if (chk) chk.textContent = '';
+                            if (chk) chk.innerHTML = '';
                         });
 
                         optItem.classList.add('selected');
                         optItem.setAttribute('aria-checked', 'true');
-                        checkmark.textContent = '✓';
+                        checkmark.innerHTML = DOMUtils.icon('check', 11, { strokeWidth: 2.5 });
 
                         this.selectedModelValue = itemData.value;
                         localStorage.setItem('kai.selectedModel', itemData.value);

@@ -82,6 +82,18 @@ export interface Translations {
     toolAskingUser?: string;
     toolQuestionAnswered?: string;
     toolQuestionCancelled?: string;
+    closeHistory?: string;
+    closeSettings?: string;
+    sendMessage?: string;
+    activeModel?: string;
+    modesAndCapabilities?: string;
+    selectMode?: string;
+    modeAgent?: string;
+    modeAsk?: string;
+    modePlan?: string;
+    modeAgentDesc?: string;
+    modeAskDesc?: string;
+    modePlanDesc?: string;
 }
 
 /**

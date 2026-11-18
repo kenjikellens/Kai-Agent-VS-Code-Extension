@@ -69,7 +69,7 @@ When implementing or modifying completions across providers, dynamically apply t
 - **SVG Assets**: Never embed inline SVG markup in HTML, CSS, or JS. Store SVGs as standalone `.svg` files in the appropriate asset directory and reference them.
 - **CSS Styling**:
   - Use Vanilla CSS.
-  - Do not use `translateX` / `translateY` transforms for hover/focus effects.
+  - Do not use `translateX` / `translateY` transforms for hover/focus effects (exception: `@keyframes fadeInMessage` retains its `2px` entrance `translateY` in `code/media/main.css`; model labels use CSS `text-overflow: ellipsis` + `title` tooltips).
 
 ---
 

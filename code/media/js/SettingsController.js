@@ -254,7 +254,8 @@ class SettingsController {
     }
 
     /**
-     * Updates settings state and renders API key inputs when connection status arrives from extension host.
+     * Updates settings inputs, LM Studio cache status indicator classes, and provider test button icons.
+     * Mutates DOM inputs, #cache-status-dot, #cache-status-text, and provider reload button states.
      * @param {object} message Connection status message.
      */
     updateConnectionStatus(message) {
@@ -267,17 +268,17 @@ class SettingsController {
                 if (message.success) {
                     btn.classList.remove('error');
                     btn.classList.add('success');
-                    btn.innerHTML = window.KAI_SVGS.success || '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>';
+                    btn.innerHTML = DOMUtils.icon('check', 13, { strokeWidth: 2.5 });
                     btn.title = 'Connected';
                 } else {
                     btn.classList.remove('success');
                     btn.classList.add('error');
-                    btn.innerHTML = window.KAI_SVGS.error || '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#e74c3c" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>';
+                    btn.innerHTML = DOMUtils.icon('error', 13, { strokeWidth: 2.5 });
                     btn.title = 'Connection failed';
                 }
                 setTimeout(() => {
                     btn.classList.remove('success', 'error');
-                    btn.innerHTML = window.KAI_SVGS.refresh || '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>';
+                    btn.innerHTML = DOMUtils.icon('refresh', 13);
                     btn.title = 'Test connection';
                 }, 2500);
             }
@@ -300,12 +301,14 @@ class SettingsController {
             if (status.valid) {
                 this.cacheStatusDot.className = 'status-dot status-connected';
                 const template = i18n.cacheLoaded || 'Model index loaded ({count} models detected)';
-                this.cacheStatusText.textContent = `✓ ${template.replace('{count}', status.modelCount)}`;
-                this.cacheStatusText.style.color = 'var(--app-success, #4ec9b0)';
+                this.cacheStatusText.textContent = template.replace('{count}', status.modelCount);
+                this.cacheStatusText.classList.remove('is-error');
+                this.cacheStatusText.classList.add('is-success');
             } else {
                 this.cacheStatusDot.className = 'status-dot status-disconnected';
-                this.cacheStatusText.textContent = `✗ ${status.error || i18n.cacheNotFound || 'Model index not found'}`;
-                this.cacheStatusText.style.color = 'var(--app-danger, #f44747)';
+                this.cacheStatusText.textContent = status.error || i18n.cacheNotFound || 'Model index not found';
+                this.cacheStatusText.classList.remove('is-success');
+                this.cacheStatusText.classList.add('is-error');
             }
         }
 
@@ -403,7 +406,7 @@ class SettingsController {
             if (docUrl) {
                 const docIconSpan = document.createElement('span');
                 docIconSpan.className = 'provider-doc-icon';
-                docIconSpan.innerHTML = window.KAI_SVGS.external_link || '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>';
+                docIconSpan.innerHTML = DOMUtils.icon('external_link', 11);
                 labelLink.appendChild(docIconSpan);
             }
 
@@ -421,14 +424,15 @@ class SettingsController {
             input.value = savedKey !== null ? savedKey : (provider.apiKey || '');
             provider.apiKey = input.value;
 
-            const eyeSvg = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>';
-            const eyeOffSvg = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>';
+            const eyeSvg = DOMUtils.icon('eye', 14);
+            const eyeOffSvg = DOMUtils.icon('eye_off', 14);
 
             const toggleBtn = document.createElement('button');
             toggleBtn.type = 'button';
             toggleBtn.className = 'toggle-password-btn';
             toggleBtn.innerHTML = eyeSvg;
             toggleBtn.title = 'Show/Hide';
+            toggleBtn.setAttribute('aria-label', 'Show/Hide');
             toggleBtn.addEventListener('click', () => {
                 const isPassword = input.type === 'password';
                 input.type = isPassword ? 'text' : 'password';
@@ -439,8 +443,9 @@ class SettingsController {
             const reloadBtn = document.createElement('button');
             reloadBtn.type = 'button';
             reloadBtn.className = 'reload-key-btn';
-            reloadBtn.innerHTML = window.KAI_SVGS.refresh || '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>';
+            reloadBtn.innerHTML = DOMUtils.icon('refresh', 13);
             reloadBtn.title = 'Test connection';
+            reloadBtn.setAttribute('aria-label', 'Test connection');
 
             if (provider.configKey) {
                 this.providerReloadButtons.set(provider.configKey, reloadBtn);

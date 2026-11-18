@@ -3,7 +3,8 @@
  */
 class ToggleComponent {
     /**
-     * Creates a reusable switch container DOM element with checkbox and track.
+     * Creates a reusable switch container DOM element with checkbox and track, preventing label double-toggles.
+     * Mutates input.checked and dispatches a synthetic change event when the slider track is clicked.
      * @param {object} options Configuration options.
      * @param {string} [options.id] Element ID for the input checkbox.
      * @param {string} [options.label] Display label text next to the toggle.
@@ -48,6 +49,7 @@ class ToggleComponent {
         });
 
         track.addEventListener('click', (e) => {
+            e.preventDefault();
             e.stopPropagation();
             input.checked = !input.checked;
             input.dispatchEvent(new Event('change'));

@@ -18,13 +18,13 @@ class PlanCardComponent {
         header.className = 'kai-plan-header';
         header.innerHTML = `
             <div class="kai-plan-title-row">
-                <span class="kai-plan-icon">📋</span>
+                <span class="kai-plan-icon">${DOMUtils.icon('plan_mode', 14)}</span>
                 <span class="kai-plan-title">Implementation Plan</span>
                 <span class="kai-plan-badge">Planning Mode</span>
             </div>
             <button type="button" class="kai-plan-toggle-btn">
                 <span class="plan-toggle-label">${isExpanded ? 'Show less' : 'Show more'}</span>
-                <svg class="plan-toggle-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                ${DOMUtils.icon('chevron_down', 12, { className: 'plan-toggle-chevron', strokeWidth: 2.5 })}
             </button>
         `;
 
@@ -38,7 +38,7 @@ class PlanCardComponent {
             const proceedBtn = document.createElement('button');
             proceedBtn.type = 'button';
             proceedBtn.className = 'kai-plan-proceed-btn';
-            proceedBtn.innerHTML = '<span>Proceed to Implementation</span> <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>';
+            proceedBtn.innerHTML = `<span>Proceed to Implementation</span> ${DOMUtils.icon('chevron_right', 14)}`;
             proceedBtn.addEventListener('click', () => onProceed());
             footer.appendChild(proceedBtn);
             card.appendChild(header);

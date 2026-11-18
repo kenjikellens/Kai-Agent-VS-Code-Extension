@@ -104,7 +104,7 @@ class FileUploadController {
 
             const isImg = /\.(png|jpe?g|webp|gif)$/i.test(file.fileName);
             const iconSpan = document.createElement('span');
-            iconSpan.textContent = isImg ? '🖼️ ' : '📄 ';
+            iconSpan.innerHTML = DOMUtils.icon(isImg ? 'diagram' : 'file', 12);
 
             const textSpan = document.createElement('span');
             textSpan.className = 'chip-name';
@@ -113,8 +113,9 @@ class FileUploadController {
             const deleteBtn = document.createElement('button');
             deleteBtn.type = 'button';
             deleteBtn.className = 'chip-remove-btn';
-            deleteBtn.textContent = '✕';
+            deleteBtn.innerHTML = DOMUtils.icon('close', 11);
             deleteBtn.title = 'Remove attached file';
+            deleteBtn.setAttribute('aria-label', 'Remove attached file');
             deleteBtn.addEventListener('click', (e) => {
                 e.stopPropagation();
                 this.removeFile(index);

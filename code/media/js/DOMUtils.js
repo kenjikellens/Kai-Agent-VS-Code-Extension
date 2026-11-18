@@ -78,21 +78,52 @@ class DOMUtils {
     }
 
     /**
+     * Returns standalone SVG markup from window.KAI_SVGS with normalized dimensions and optional class/stroke overrides.
+     * Central icon source for all webview controllers; reads window.KAI_SVGS without mutating the DOM.
+     * @param {string} name Asset name in window.KAI_SVGS.
+     * @param {number} [size=14] Pixel width and height to apply.
+     * @param {{ className?: string, strokeWidth?: number, fallbackName?: string }} [opts={}] Optional rendering overrides.
+     * @returns {string} SVG markup string or empty string if missing.
+     */
+    static icon(name, size = 14, opts = {}) {
+        const svgs = (typeof window !== 'undefined' && window.KAI_SVGS) || {};
+        const fallback = opts.fallbackName || 'default_tool';
+        let raw = svgs[name] || svgs[fallback] || '';
+        if (!raw) return '';
+        if (size) {
+            raw = raw.replace(/\swidth="[^"]*"/, ` width="${size}"`).replace(/\sheight="[^"]*"/, ` height="${size}"`);
+        }
+        if (opts.strokeWidth !== undefined) {
+            raw = raw.replace(/\sstroke-width="[^"]*"/, ` stroke-width="${opts.strokeWidth}"`);
+        }
+        if (opts.className !== undefined) {
+            if (/\sclass="[^"]*"/.test(raw)) {
+                raw = raw.replace(/\sclass="[^"]*"/, opts.className ? ` class="${opts.className}"` : '');
+            } else if (opts.className) {
+                raw = raw.replace('<svg', `<svg class="${opts.className}"`);
+            }
+        }
+        return raw;
+    }
+
+    /**
      * Returns chevron SVG markup string for inline HTML templates.
+     * Delegates to DOMUtils.icon using the standalone chevron_down asset.
      * @param {string} className CSS class name.
      * @returns {string} SVG HTML string.
      */
     static getChevronSvgString(className = 'thinking-chevron') {
-        return `<svg class="${className}" width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>`;
+        return DOMUtils.icon('chevron_down', 8, { className, strokeWidth: 3 });
     }
 
     /**
      * Returns upwards chevron SVG markup string.
+     * Delegates to DOMUtils.icon using the standalone chevron_up asset.
      * @param {string} className CSS class name.
      * @returns {string} SVG HTML string.
      */
     static getChevronUpSvgString(className = 'thinking-chevron') {
-        return `<svg class="${className}" width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"></polyline></svg>`;
+        return DOMUtils.icon('chevron_up', 8, { className, strokeWidth: 3 });
     }
 
     /**
