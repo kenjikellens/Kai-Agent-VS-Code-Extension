@@ -8,7 +8,7 @@ This document serves as the master architectural reference and system design gui
 
 The KAI Agent workspace maintains two **independent** target runtime implementations that do **not** need to be identical:
 - **`Kai-Agent-extension/`**: Remains in **TypeScript / JavaScript** for the VS Code Extension Host.
-- **`KAI Agent App/`**: Standalone Desktop App migrating backend execution to **Rust + Tauri** (`KAI Agent App/kai-core/` and `KAI Agent App/src-tauri/`) while retaining `src/renderer/` UI (with legacy Electron/Preview scripts during transition).
+- **`KAI Agent App/`**: Standalone Desktop App powered by **Rust + Tauri** (`KAI Agent App/kai-core/` and `KAI Agent App/src-tauri/`) with `src/renderer/` UI (legacy Electron `src/main/`, `run_pc.py`, and `preview_server.js` removed).
 
 ```text
                                   ┌──────────────────────────────────────────────┐
@@ -211,4 +211,4 @@ Whenever architecture, UI components, runtime features, or system design guideli
 - **Workspace Crate Separation**: `KAI Agent App/Cargo.toml` defines `kai-core` (`KAI Agent App/kai-core`, platform-agnostic Rust OOP core) and `src-tauri` (`KAI Agent App/src-tauri`, Tauri v2 desktop shell serving `../src/renderer` with `withGlobalTauri: true`). `Kai-Agent-extension` remains strictly in TypeScript/JavaScript.
 - **OOP Trait Abstractions (`KAI Agent App/kai-core/src/traits/`)**: `LlmProvider` (`OpenAiCompatClient` composition + 8 dedicated provider structs via `ProviderFactory`), `AgentTool` (`ToolRegistry::for_mode` with workspace/mode gating), `HostServices` (`TauriHostServices`), and `SessionStorage` (`FileSessionStorage`).
 - **Rust Tools & Engine (`KAI Agent App/kai-core/src/tools/`, `KAI Agent App/kai-core/src/engine/`)**: `WorkspacePathGuard`, `FetchUrlTool` (SSRF IP/DNS blocklist, max 3 redirects, 1 MB cap), `RunCommandTool` (user approval via `HostServices`), `CalculateTool` (recursive-descent parser), `ConfigManager` (`keyring` OS credential vault), `SessionStore`, `TurnSnapshotManager`, and `AgentExecutor`.
-- **Renderer Bridge (`WebviewIPCBridge.js`)**: Detects `window.__TAURI__` (`_isTauri`) and routes messages via `kai_post_message` / `kai://ipc` events alongside Electron, VS Code, and Browser Preview.
+- **Renderer Bridge (`WebviewIPCBridge.js`)**: Detects `window.__TAURI__` (`_isTauri`), provides `sendMessage()` + full IPC method parity, and routes messages via `kai_post_message` / `kai://ipc` events alongside Electron, VS Code, and Browser Preview. `KAI Agent App/.gitignore` ignores `target/` so large Rust build artifacts are never pushed to Git.
