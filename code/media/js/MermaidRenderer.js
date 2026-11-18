@@ -23,7 +23,7 @@ class MermaidRenderer {
                 window.mermaid.initialize({
                     startOnLoad: false,
                     theme: isLight ? 'default' : 'dark',
-                    securityLevel: 'loose',
+                    securityLevel: 'strict',
                     fontFamily: 'var(--app-font, sans-serif)',
                     themeVariables: {
                         darkMode: !isLight,
@@ -86,7 +86,7 @@ class MermaidRenderer {
             try {
                 // Render Mermaid diagram SVG asynchronously
                 const { svg } = await window.mermaid.render(uniqueId, rawCode);
-                svgContainer.innerHTML = svg;
+                svgContainer.innerHTML = this._sanitizeSvg(svg);
                 svgContainer.classList.remove('hidden');
                 if (errorContainer) errorContainer.classList.add('hidden');
             } catch (renderError) {
@@ -108,6 +108,29 @@ class MermaidRenderer {
                 this.setActiveTab(card, 'code');
             }
         }
+    }
+
+    /**
+     * Strips dangerous script elements, event handlers, and javascript: URIs from rendered SVG markup.
+     * @param {string} svgMarkup Raw SVG string.
+     * @returns {string} Sanitized SVG markup.
+     */
+    _sanitizeSvg(svgMarkup) {
+        if (!svgMarkup || typeof DOMParser === 'undefined') return '';
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(svgMarkup, 'image/svg+xml');
+        if (doc.querySelector('parsererror')) return '';
+        doc.querySelectorAll('script').forEach(el => el.remove());
+        doc.querySelectorAll('*').forEach(el => {
+            for (const attr of Array.from(el.attributes)) {
+                const name = attr.name.toLowerCase();
+                const val = attr.value.trim().toLowerCase();
+                if (name.startsWith('on') || ((name === 'href' || name === 'xlink:href') && val.startsWith('javascript:'))) {
+                    el.removeAttribute(attr.name);
+                }
+            }
+        });
+        return new XMLSerializer().serializeToString(doc.documentElement);
     }
 
     /**

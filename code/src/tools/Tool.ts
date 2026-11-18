@@ -1,3 +1,4 @@
+import * as fs from 'fs';
 import * as path from 'path';
 import { IHostServices } from '../core/IHostServices';
 
@@ -120,15 +121,36 @@ export abstract class Tool {
 
 /**
  * Resolves a relative path to an absolute path inside the active workspace directory.
- * Throws an error if the path tries to traverse outside of the workspace directory.
+ * Rejects empty workspaces, sibling-prefix escapes, and symlink traversals outside the workspace.
  * @param relativePath The relative path supplied by the LLM.
  * @param workspacePath The absolute path to the workspace directory.
  * @returns The resolved absolute path.
  */
 export function resolveSafePath(relativePath: string, workspacePath: string): string {
-    const resolved = path.resolve(workspacePath, relativePath);
-    if (!resolved.startsWith(workspacePath)) {
+    if (!workspacePath || !workspacePath.trim()) {
+        throw new Error('Path traversal violation: No active workspace directory is configured.');
+    }
+    const baseResolved = path.resolve(workspacePath);
+    const rootReal = fs.existsSync(baseResolved) ? fs.realpathSync(baseResolved) : baseResolved;
+    const resolved = path.resolve(rootReal, relativePath || '.');
+    const rel = path.relative(rootReal, resolved);
+    if (rel.startsWith('..') || path.isAbsolute(rel)) {
         throw new Error(`Path traversal violation: Access to path "${relativePath}" outside the workspace is denied.`);
+    }
+
+    // Verify realpath of the target or nearest existing ancestor to block symlink/junction escapes
+    let probe = resolved;
+    while (!fs.existsSync(probe)) {
+        const parent = path.dirname(probe);
+        if (parent === probe) break;
+        probe = parent;
+    }
+    if (fs.existsSync(probe)) {
+        const probeReal = fs.realpathSync(probe);
+        const realRel = path.relative(rootReal, probeReal);
+        if (realRel.startsWith('..') || path.isAbsolute(realRel)) {
+            throw new Error(`Path traversal violation: Symlink "${relativePath}" resolves outside the workspace.`);
+        }
     }
     return resolved;
 }

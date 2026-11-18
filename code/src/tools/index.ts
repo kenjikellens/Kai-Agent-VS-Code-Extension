@@ -70,7 +70,28 @@ export function getRegisteredTools(mode: 'chat' | 'agent' | 'planning' | 'ask' |
         ];
     }
 
-    // 3. Agent & Planning Modes (Full Workspace Developer Tools + ask_user)
+    // 3. Planning Mode: read-only workspace tools + artifact-only write_file (.kai/artifacts)
+    if (mode === 'planning') {
+        const planningTools: Tool[] = [
+            utilityTool,
+            fetchUrlTool,
+            webSearchTool,
+            askUserTool
+        ];
+        if (hasWorkspace) {
+            planningTools.unshift(
+                new ReadFileTool(),
+                new WriteFileTool('.kai/artifacts'),
+                new ListDirTool(),
+                new GrepSearchTool(),
+                new GetDiagnosticsTool(),
+                new SymbolSearchTool()
+            );
+        }
+        return planningTools;
+    }
+
+    // 4. Agent Mode (Full Workspace Developer Tools + ask_user)
     return [
         new ReadFileTool(),
         new WriteFileTool(),

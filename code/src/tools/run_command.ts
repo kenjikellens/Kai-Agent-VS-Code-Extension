@@ -37,6 +37,12 @@ export class RunCommandTool extends Tool {
      * @returns A string summary of stdout, stderr, and/or errors.
      */
     public async execute(args: { command: string }, context: ToolContext): Promise<string> {
+        if (context.hostServices?.requestCommandApproval) {
+            const allowed = await context.hostServices.requestCommandApproval(args.command || '');
+            if (!allowed) {
+                return `[Execution Cancelled]: User refused to execute the command: ${args.command || ''}`;
+            }
+        }
         return new Promise((resolve) => {
             childProcess.exec(
                 args.command,

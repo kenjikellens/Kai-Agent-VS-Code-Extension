@@ -1,4 +1,5 @@
 import * as fs from 'fs';
+import * as path from 'path';
 import { Tool, ToolContext, FunctionDeclaration, resolveSafePath } from './Tool';
 import { FileToolUtils } from './FileToolUtils';
 import { TurnSnapshotManager } from '../services/TurnSnapshotManager';
@@ -9,6 +10,15 @@ import { TurnSnapshotManager } from '../services/TurnSnapshotManager';
 export class WriteFileTool extends Tool {
     public readonly name = 'write_file';
     public readonly description = 'Creates a new file or completely overwrites an existing file with the specified content.';
+    private readonly restrictedSubdir?: string;
+
+    /**
+     * Initializes WriteFileTool with an optional workspace subdirectory restriction (used in planning mode).
+     */
+    constructor(restrictedSubdir?: string) {
+        super();
+        this.restrictedSubdir = restrictedSubdir;
+    }
 
     public getFunctionDeclaration(): FunctionDeclaration {
         return {
@@ -42,6 +52,13 @@ export class WriteFileTool extends Tool {
      */
     public async execute(args: { path: string; content: string }, context: ToolContext): Promise<string> {
         const targetPath = resolveSafePath(args.path, context.workspacePath);
+        if (this.restrictedSubdir) {
+            const allowedRoot = resolveSafePath(this.restrictedSubdir, context.workspacePath);
+            const rel = path.relative(allowedRoot, targetPath);
+            if (rel.startsWith('..') || path.isAbsolute(rel)) {
+                return `[Error]: In Planning Mode, write_file is restricted to "${this.restrictedSubdir}/" artifacts only.`;
+            }
+        }
         const turnId = context.turnId || 'default';
         await TurnSnapshotManager.getInstance().recordBeforeMutation(turnId, targetPath);
 

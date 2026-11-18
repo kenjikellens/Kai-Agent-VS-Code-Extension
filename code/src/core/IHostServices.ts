@@ -44,5 +44,12 @@ export interface IHostServices {
      * @returns The user's selected or typed answer string.
      */
     askUser(question: string, options?: string[], allowCustom?: boolean): Promise<string>;
+
+    /**
+     * Requests explicit user approval before executing a shell command in the workspace.
+     * @param command Shell command string to approve.
+     * @returns True if user approved execution, false otherwise.
+     */
+    requestCommandApproval?(command: string): Promise<boolean>;
 }
 

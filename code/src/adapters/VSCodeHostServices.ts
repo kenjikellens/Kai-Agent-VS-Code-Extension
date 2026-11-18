@@ -270,6 +270,20 @@ export class VSCodeHostServices implements IHostServices {
             }
         });
     }
+
+    /**
+     * Prompts the developer via a modal VS Code confirmation before executing a shell command.
+     * @param command Shell command string to approve.
+     */
+    public async requestCommandApproval(command: string): Promise<boolean> {
+        const choice = await vscode.window.showWarningMessage(
+            `Allow KAI Agent to run terminal command?\n\n${command}`,
+            { modal: true },
+            'Allow',
+            'Refuse'
+        );
+        return choice === 'Allow';
+    }
 }
 
 /**

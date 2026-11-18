@@ -12,6 +12,8 @@ import { VSCodeHostServices, MementoSessionStorage } from './adapters/VSCodeHost
 import { EditorContextProvider } from './EditorContextProvider';
 import { TurnSnapshotManager } from './services/TurnSnapshotManager';
 import { Logger } from './services/Logger';
+import { resolveSafePath } from './tools/Tool';
+import * as crypto from 'crypto';
 
 /**
  * SidebarProvider implements the vscode.WebviewViewProvider to govern the behavior,
@@ -190,7 +192,12 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
                 case 'openExternal':
                 case 'openExternalUrl': {
                     if (data.url) {
-                        vscode.env.openExternal(vscode.Uri.parse(data.url));
+                        try {
+                            const parsed = new URL(data.url);
+                            if (parsed.protocol === 'https:' || parsed.protocol === 'http:') {
+                                vscode.env.openExternal(vscode.Uri.parse(data.url));
+                            }
+                        } catch {}
                     }
                     break;
                 }
@@ -543,14 +550,15 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
             return;
         }
         const workspacePath = workspaceFolders[0].uri.fsPath;
-        const targetPath = path.isAbsolute(relOrAbsPath)
-            ? relOrAbsPath
-            : path.join(workspacePath, relOrAbsPath);
-
-        if (fs.existsSync(targetPath)) {
-            const docUri = vscode.Uri.file(targetPath);
-            const doc = await vscode.workspace.openTextDocument(docUri);
-            await vscode.window.showTextDocument(doc);
+        try {
+            const targetPath = resolveSafePath(relOrAbsPath, workspacePath);
+            if (fs.existsSync(targetPath)) {
+                const docUri = vscode.Uri.file(targetPath);
+                const doc = await vscode.workspace.openTextDocument(docUri);
+                await vscode.window.showTextDocument(doc);
+            }
+        } catch {
+            // Reject opening files outside the workspace
         }
     }
 
@@ -1024,14 +1032,9 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
 }
 
 /**
- * Generates a random cryptographic nonce string for Content Security Policy scripts.
+ * Generates a cryptographically strong random nonce string for Content Security Policy scripts.
  * @returns Nonce string.
  */
 function getNonce(): string {
-    let text = '';
-    const possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-    for (let i = 0; i < 32; i++) {
-        text += possible.charAt(Math.floor(Math.random() * possible.length));
-    }
-    return text;
+    return crypto.randomBytes(16).toString('base64');
 }
