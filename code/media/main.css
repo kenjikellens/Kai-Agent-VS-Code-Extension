@@ -174,7 +174,7 @@ body {
 }
 
 .hidden {
-  display: none !important;
+  display: none;
 }
 
 /* -----------------------------
@@ -218,7 +218,7 @@ body {
 ------------------------------ */
 /* Base interactive button element reset and smooth transition */
 button {
-  border: 0 !important;
+  border: 0;
   outline: none;
   cursor: pointer;
   border-radius: var(--app-radius-sm);
@@ -233,11 +233,12 @@ button:disabled {
 /**
  * Single Unified Component: .icon-btn
  * Standardized icon-only clickable button across the entire UI.
- * 
+ *
  * Applied in:
  * - Header action buttons (.icon-btn, .icon-btn--header)
  * - Input prompt toolbar (.icon-btn, .icon-btn--toolbar)
  * - Sidebar history item deletion (.icon-btn, .icon-btn--delete)
+ * - Modal & dock dismiss buttons (.icon-btn, .icon-btn--close, .icon-btn--close-pill)
  */
 .icon-btn {
   display: inline-flex;
@@ -245,7 +246,7 @@ button:disabled {
   justify-content: center;
   background: transparent;
   color: var(--app-fg);
-  border: 0 !important;
+  border: 0;
   outline: none;
   cursor: pointer;
   box-sizing: border-box;
@@ -310,6 +311,36 @@ button:disabled {
   background: rgba(255, 107, 107, 0.15);
 }
 
+.icon-btn--close {
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border-radius: var(--app-radius-sm, 4px);
+  color: var(--app-muted);
+}
+
+.icon-btn--close:hover:not(:disabled) {
+  box-shadow: none;
+}
+
+.icon-btn--close-pill {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  min-width: 24px;
+  min-height: 24px;
+  padding: 0;
+  border-radius: 999px;
+  background: var(--app-surface-strong);
+  color: var(--app-muted, #888888);
+}
+
+.icon-btn--close-pill svg {
+  display: block;
+  pointer-events: none;
+}
+
 #send-btn {
   width: 24px;
   height: 24px;
@@ -345,7 +376,7 @@ button:disabled {
   align-items: center;
   justify-content: center;
   gap: 8px;
-  border: 0 !important;
+  border: 0;
   outline: none;
   cursor: pointer;
   box-sizing: border-box;
@@ -454,7 +485,7 @@ button:disabled {
   color: var(--app-fg);
   border: 1px solid var(--app-border, rgba(120, 120, 120, 0.25));
   border-radius: 999px;
-  padding: 6px 14px !important;
+  padding: 6px 14px;
   box-sizing: border-box;
   word-break: break-word;
   transition: background-color 0.15s ease, border-color 0.15s ease;
@@ -462,7 +493,7 @@ button:disabled {
 
 .user-message:hover {
   background: var(--app-surface-hover, rgba(120, 120, 120, 0.22));
-  box-shadow: none !important;
+  box-shadow: none;
 }
 
 .user-message.is-multiline,
@@ -472,7 +503,7 @@ button:disabled {
 .user-message:has(ol),
 .user-message:has(pre) {
   border-radius: 14px;
-  padding: 8px 14px !important;
+  padding: 8px 14px;
 }
 
 /* Keyframes: Smooth fade-in for streamed words */
@@ -501,7 +532,7 @@ button:disabled {
 }
 
 .assistant-message .message-content {
-  padding: 2px 0 !important;
+  padding: 2px 0;
   line-height: 1.45;
 }
 
@@ -1036,7 +1067,7 @@ button:disabled {
   font-size: 0.7rem;
   padding: 0 2px;
   margin-left: 2px;
-  border: 0 !important;
+  border: 0;
   cursor: pointer;
 }
 
@@ -1104,7 +1135,7 @@ button:disabled {
   width: 24px;
   height: 24px;
   padding: 0;
-  border: 0 !important;
+  border: 0;
   border-radius: 999px;
   background: var(--app-accent, #007acc);
   color: var(--vscode-button-foreground, #ffffff);
@@ -1212,7 +1243,7 @@ button:disabled {
   padding: 0 12px;
   border-radius: 999px;
   background: var(--app-surface-strong);
-  border: 0 !important;
+  border: 0;
   outline: none;
   color: var(--app-muted);
   font-size: 0.76rem;
@@ -1269,7 +1300,7 @@ button:disabled {
   justify-content: flex-start;
   gap: 5px;
   padding: 0 10px;
-  border: 0 !important;
+  border: 0;
   border-radius: 999px;
   background: var(--app-surface-strong);
   color: var(--app-fg);
@@ -1327,7 +1358,7 @@ button:disabled {
 .dropdown-trigger:hover .model-text-container.has-overflow .model-text-inner,
 .dropdown-item:hover .model-text-container.has-overflow .model-text-inner,
 .model-text-container.has-overflow:hover .model-text-inner {
-  animation: modelTextPingPong var(--scroll-duration, 8s) ease-in-out infinite !important;
+  animation: modelTextPingPong var(--scroll-duration, 8s) ease-in-out infinite;
 }
 
 /* Keyframes for no-delay, smooth continuous ping-pong scroll on hover */
@@ -1399,7 +1430,7 @@ button:disabled {
   gap: 12px;
   padding: 10px 10px 10px 10px;
   margin: 0;
-  background: transparent !important;
+  background: transparent;
   color: var(--app-muted);
   font-size: 0.78rem;
   font-weight: 600;
@@ -1407,7 +1438,7 @@ button:disabled {
   letter-spacing: 0.5px;
   cursor: pointer;
   user-select: none;
-  border: 0 !important;
+  border: 0;
   border-radius: 0;
   outline: none;
   width: 100%;
@@ -1418,7 +1449,7 @@ button:disabled {
 /* Hover state for category header toggle button */
 .dropdown-category-header:hover,
 .dropdown-category-header:focus-visible {
-  background: transparent !important;
+  background: transparent;
   color: var(--app-fg);
 }
 
@@ -1628,7 +1659,7 @@ button:disabled {
 
 /* Inner visible box of the Thinking & Reasoning flyout - Modifier on shared dropdown base */
 .thinking-flyout-menu-inner {
-  border: none !important;
+  border: none;
   box-shadow: var(--app-flyout-shadow);
   overflow: hidden;
 }
@@ -1640,7 +1671,7 @@ button:disabled {
 
 /* Divider inside Thinking Flyout menu - Removed for seamless appearance */
 .flyout-divider {
-  display: none !important;
+  display: none;
 }
 
 /* Active open state on parent item when flyout submenu is visible */
@@ -1655,9 +1686,11 @@ button:disabled {
 }
 
 /* Force hide flyout submenus when parent category is collapsed or dropdown closed */
+.dropdown-category-content.collapsed .dropdown-item.model-hover-item.flyout-open > .thinking-flyout-menu,
+.dropdown-menu.hidden .dropdown-item.model-hover-item.flyout-open > .thinking-flyout-menu,
 .dropdown-category-content.collapsed .thinking-flyout-menu,
 .dropdown-menu.hidden .thinking-flyout-menu {
-  display: none !important;
+  display: none;
 }
 
 /* Dropdown item status dot spacing */
@@ -1708,7 +1741,7 @@ button:disabled {
   position: relative;
   margin: 0;
   padding: 0;
-  border: none !important;
+  border: none;
   border-radius: 12px;
   background: transparent;
   box-sizing: border-box;
@@ -1771,7 +1804,7 @@ button:disabled {
   letter-spacing: 0.5px;
   cursor: pointer;
   user-select: none;
-  border: 0 !important;
+  border: 0;
   border-radius: 0;
   outline: none;
   transition: color 0.15s ease, background-color 0.15s ease, box-shadow 0.15s ease;
@@ -1797,16 +1830,16 @@ button:disabled {
 
 .settings-category .category-header-btn:hover,
 .settings-category .category-header-btn:focus-visible {
-  background: var(--app-surface-hover) !important;
+  background: var(--app-surface-hover);
   color: var(--app-fg);
-  border: none !important;
+  border: none;
   box-shadow: var(--app-btn-inset);
 }
 
 .settings-category .category-header-btn:active {
-  background: var(--app-surface-active) !important;
+  background: var(--app-surface-active);
   color: var(--app-fg);
-  box-shadow: none !important;
+  box-shadow: none;
 }
 
 /* Category Title - Uppercase, bold, matching unified typography */
@@ -1929,7 +1962,7 @@ button:disabled {
 }
 
 .provider-label-link:hover span {
-  color: var(--main-link-hover, #58a6ff) !important;
+  color: var(--main-link-hover, #58a6ff);
   text-decoration: underline;
 }
 
@@ -1975,7 +2008,7 @@ button:disabled {
   background: transparent;
   color: var(--app-muted);
   cursor: pointer;
-  border: 0 !important;
+  border: 0;
   border-radius: var(--app-radius-sm);
   transition: color 0.15s ease;
 }
@@ -1996,7 +2029,7 @@ button:disabled {
   align-items: center;
   justify-content: center;
   background: var(--app-surface-strong, rgba(255, 255, 255, 0.06));
-  border: 1px solid var(--app-input-border, rgba(255, 255, 255, 0.1)) !important;
+  border: 1px solid var(--app-input-border, rgba(255, 255, 255, 0.1));
   border-radius: var(--app-radius-sm, 4px);
   color: var(--app-muted);
   cursor: pointer;
@@ -2007,13 +2040,13 @@ button:disabled {
 .reload-key-btn:hover {
   background: var(--app-surface-hover, rgba(255, 255, 255, 0.08));
   color: var(--app-fg);
-  border-color: rgba(255, 255, 255, 0.18) !important;
+  border-color: rgba(255, 255, 255, 0.18);
   box-shadow: var(--app-btn-inset);
 }
 
 .reload-key-btn:active {
   background: rgba(255, 255, 255, 0.12);
-  box-shadow: none !important;
+  box-shadow: none;
 }
 
 .reload-key-btn.testing svg {
@@ -2022,13 +2055,13 @@ button:disabled {
 }
 
 .reload-key-btn.success {
-  color: var(--main-success-color, #4ec9b0) !important;
-  border-color: var(--main-success-color, #4ec9b0) !important;
+  color: var(--main-success-color, #4ec9b0);
+  border-color: var(--main-success-color, #4ec9b0);
 }
 
 .reload-key-btn.error {
-  color: var(--main-danger-color, #f44747) !important;
-  border-color: var(--main-danger-color, #f44747) !important;
+  color: var(--main-danger-color, #f44747);
+  border-color: var(--main-danger-color, #f44747);
 }
 
 /* ==========================================================================
@@ -2056,7 +2089,7 @@ button:disabled {
   padding: 4px 10px;
   background: var(--app-surface-strong);
   color: var(--app-fg);
-  border: 0 !important;
+  border: 0;
   outline: none;
   border-radius: var(--app-radius-sm);
   font-size: 0.75rem;
@@ -2110,7 +2143,7 @@ button:disabled {
 }
 
 .custom-select-menu.hidden {
-  display: none !important;
+  display: none;
 }
 
 /* Custom Select option item button styling, reusing dropdown-item style tokens */
@@ -2423,7 +2456,7 @@ button:disabled {
   display: inline-flex;
   flex-direction: column;
   align-self: flex-start;
-  margin: 2px 0 !important;
+  margin: 2px 0;
   padding: 3px 10px;
   border-radius: 999px;
   background: transparent;
@@ -2441,7 +2474,7 @@ button:disabled {
   background: var(--app-surface-hover);
   border-color: var(--app-border);
   color: var(--app-fg);
-  box-shadow: none !important;
+  box-shadow: none;
 }
 
 .tool-status-row.expanded {
@@ -2717,7 +2750,7 @@ button:disabled {
   padding: 0 12px;
   margin: 1.5px 0;
   box-sizing: border-box;
-  border: 0 !important;
+  border: 0;
   border-radius: 999px;
   background: transparent;
   cursor: pointer;
@@ -3069,13 +3102,13 @@ details[open]>summary>.custom-chevron {
     gap: 2px;
   }
 
-  .icon-btn-header {
+  .icon-btn--header {
     width: 22px;
     height: 22px;
     padding: 3px;
   }
 
-  .icon-btn-header svg {
+  .icon-btn--header svg {
     width: 13px;
     height: 13px;
   }
@@ -3176,37 +3209,6 @@ details[open]>summary>.custom-chevron {
   font-size: 0.82rem;
   font-weight: 600;
   color: var(--app-fg, #cccccc);
-}
-
-.help-close-btn {
-  display: grid;
-  place-items: center;
-  width: 24px;
-  height: 24px;
-  min-width: 24px;
-  min-height: 24px;
-  padding: 0;
-  margin: 0;
-  border: 0 !important;
-  border-radius: 999px;
-  background: var(--app-surface-strong);
-  color: var(--app-muted, #888888);
-  cursor: pointer;
-  outline: none;
-  flex-shrink: 0;
-  box-sizing: border-box;
-  transition: background-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
-}
-
-.help-close-btn svg {
-  display: block;
-  pointer-events: none;
-}
-
-.help-close-btn:hover {
-  background: var(--app-surface-hover, #37373d);
-  color: var(--app-fg, #ffffff);
-  box-shadow: var(--app-btn-inset);
 }
 
 .help-modal-body {
@@ -3665,7 +3667,7 @@ details[open]>summary>.custom-chevron {
   border-radius: var(--app-radius-sm);
   background: transparent;
   color: var(--app-muted);
-  border: 0 !important;
+  border: 0;
   outline: none;
   cursor: pointer;
   opacity: 0;
@@ -3729,7 +3731,7 @@ details[open]>summary>.custom-chevron {
   border-radius: var(--app-radius-sm);
   background: transparent;
   color: var(--app-muted);
-  border: 0 !important;
+  border: 0;
   outline: none;
   cursor: pointer;
   transition: background-color 0.15s ease, color 0.15s ease;
@@ -3852,12 +3854,12 @@ details[open]>summary>.custom-chevron {
 
 /* Connected status state indicator - solid green dot */
 .status-dot.status-connected {
-  background: #2ecc71 !important;
+  background: #2ecc71;
 }
 
 /* Disconnected status state indicator - solid red dot */
 .status-dot.status-disconnected {
-  background: #e74c3c !important;
+  background: #e74c3c;
 }
 
 .dropdown-item .status-dot {
@@ -4090,28 +4092,6 @@ details[open]>summary>.custom-chevron {
   word-break: break-word;
 }
 
-/* [Ask User Dock Close Button] - Minimal dismiss icon button */
-.ask-dock-close-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 24px;
-  height: 24px;
-  padding: 0;
-  border: none;
-  border-radius: var(--app-radius-sm, 4px);
-  background: transparent;
-  color: var(--app-muted);
-  cursor: pointer;
-  flex-shrink: 0;
-  transition: background-color 0.15s ease, color 0.15s ease;
-}
-
-.ask-dock-close-btn:hover {
-  background: var(--app-surface-hover);
-  color: var(--app-fg);
-}
-
 /* [Ask User Options List] - Vertical stack of selectable choices with dividers */
 .ask-options-list {
   display: flex;
@@ -4196,5 +4176,18 @@ details[open]>summary>.custom-chevron {
 .ask-skip-btn:hover {
   background: var(--app-surface-active);
   border-color: var(--app-border-strong);
+}
+
+/* Global hidden utility overrides placed last in cascade */
+.hidden,
+.dropdown-menu.hidden,
+.custom-select-menu.hidden,
+.toolbar-mode-btn.hidden,
+.attached-files-bar.hidden,
+.view-panel.hidden,
+.ask-user-dock.hidden,
+.help-container.hidden,
+#context-options-dropdown-container.hidden {
+  display: none;
 }
 

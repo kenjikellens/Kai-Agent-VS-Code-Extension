@@ -31,7 +31,7 @@ class HelpModalController {
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
                         <span id="help-modal-title-text">Kai Quick Guide & Shortcuts</span>
                     </div>
-                    <button type="button" class="help-close-btn" id="close-help-btn" title="Close">
+                    <button type="button" class="icon-btn icon-btn--close-pill" id="close-help-btn" title="Close">
                         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
                     </button>
                 </div>

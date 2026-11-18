@@ -24,6 +24,7 @@ This repository contains two independent implementations of the KAI Agent ecosys
   - Compile extension changes: Run `npm run compile` within `Kai-Agent-extension/code`.
   - Sync to IDE extension folder: Execute `Kai-Agent-extension/update.bat`.
 - **Desktop App (`KAI Agent App/`)**:
+  - Launch standalone release binary: Run `KAI Agent App/start_kai_rust.bat` (builds/starts `target/release/kai-agent-tauri.exe`).
   - Run via Tauri: `cargo tauri dev` in `KAI Agent App` (or `cargo tauri build` for release).
   - Run Rust tests: `cargo test -p kai-core` in `KAI Agent App`.
 
