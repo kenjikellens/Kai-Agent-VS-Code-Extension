@@ -6,7 +6,9 @@ This document serves as the master architectural reference and system design gui
 
 ## 1. Dual Deployment Ecosystem Overview
 
-The KAI Agent workspace maintains two target runtime implementations sharing core modular principles:
+The KAI Agent workspace maintains two **independent** target runtime implementations that do **not** need to be identical:
+- **`Kai-Agent-extension/`**: Remains in **TypeScript / JavaScript** for the VS Code Extension Host.
+- **`KAI Agent App/`**: Standalone Desktop App migrating backend execution to **Rust + Tauri** (`KAI Agent App/kai-core/` and `KAI Agent App/src-tauri/`) while retaining `src/renderer/` UI (with legacy Electron/Preview scripts during transition).
 
 ```text
                                   ┌──────────────────────────────────────────────┐
@@ -36,7 +38,7 @@ The KAI Agent workspace maintains two target runtime implementations sharing cor
 | **`main.css`** | **Webview Stylesheet**<br>`code/media/main.css`<br>Scoped for VS Code container, uses `var(--vscode-*)` variables. | **Desktop Application Stylesheet**<br>`src/renderer/media/main.css`<br>Full desktop application CSS with custom tokens, sidebar grids, and window chrome. | **Theming**: Extension adheres to VS Code IDE themes; Desktop App owns its standalone design system. |
 | **Host / Backend (`SidebarProvider.ts` vs `AppHost.ts`)** | **`code/src/SidebarProvider.ts`**<br>Manages `vscode.WebviewView` lifecycle, CSP headers, and extension message routing. | **`src/main/AppHost.ts` & `preload.ts`**<br>Manages Electron window events, native file pickers, and `ipcMain` channels. | **Runtime Target**: VS Code Webview API vs. Electron Main Process & Preload Context Bridge. |
 | **`run_pc.py`** | **Not Present / Not Needed** | **`run_pc.py`**<br>Minimal Python HTTP server & CORS proxy for local browser preview. | **Browser Testing**: Standalone Python preview exists strictly for rapid browser-based desktop UI testing. |
-| **`providers/*`** | **`code/src/providers/*`**<br>Dedicated TypeScript classes implementing `ILLMProvider` (`GeminiClient`, `OpenRouterClient`, etc.). | **`src/main/providers/*`**<br>Identical TypeScript provider implementations executing in Electron Main. | **OOP Parity**: 100% interface and logic parity across both backends. |
+| **`providers/*`** | **`code/src/providers/*`**<br>Dedicated TypeScript classes implementing `ILLMProvider` (`GeminiClient`, `OpenRouterClient`, etc.). | **`kai-core/src/providers/*` & `src/main/providers/*`** (`KAI Agent App/`)<br>Independent OOP Rust (`LlmProvider` trait) and legacy TypeScript provider implementations. | **Independent Runtimes**: Extension stays in TypeScript/Node.js; Desktop App can evolve independently in Rust/Tauri without 1-to-1 code parity. |
 | **`ThinkingStateFormatter.js`** | **`code/media/js/ThinkingStateFormatter.js`**<br>Dynamic reasoning options resolver for OpenRouter & Gemini `Minimal` labels. | **`src/renderer/media/js/ThinkingStateFormatter.js`**<br>Identical dynamic reasoning state resolver. | **UI State Parity**: Shared model reasoning dictionary and flyout formatting logic. |
 
 ---
@@ -204,3 +206,9 @@ Whenever architecture, UI components, runtime features, or system design guideli
 - **Preview Server Hardening (`preview_server.js`)**: Loopback `127.0.0.1` binding, strict localhost `Origin` + per-session `X-KAI-Token` verification, static path boundary checks, 10 MB body limit, `/api/health` readiness endpoint, and `TopMost` Windows folder picker handling.
 - **Tool & Host Isolation**: Hardened `resolveSafePath` (`path.relative` + `fs.realpathSync`), Planning Mode read-only tool gating (`.kai/artifacts/`-only writes), mandatory `requestCommandApproval` across Electron, VS Code, and Browser Preview, `http:`/`https:`-only `openExternal`, and workspace-confined `openFile`.
 - **XSS, SSRF & Secret Protection**: Full quote escaping in `MarkdownFormatter.escapeHtml()`, Mermaid `securityLevel: 'strict'` + SVG sanitization, strict `index.html` CSP + Electron `sandbox: true`, SSRF IP/redirect/size guards in `fetch_url.ts`/`HttpClient.ts`, `x-goog-api-key` header auth in `GeminiClient.ts`, `safeStorage` encryption in `ConfigManager.ts`, and recursive-descent arithmetic parsing in `BrowserToolsExecutor.js`.
+
+### S. Rust & Tauri OOP Desktop Architecture (`KAI Agent App/kai-core` & `KAI Agent App/src-tauri`)
+- **Workspace Crate Separation**: `KAI Agent App/Cargo.toml` defines `kai-core` (`KAI Agent App/kai-core`, platform-agnostic Rust OOP core) and `src-tauri` (`KAI Agent App/src-tauri`, Tauri v2 desktop shell serving `../src/renderer` with `withGlobalTauri: true`). `Kai-Agent-extension` remains strictly in TypeScript/JavaScript.
+- **OOP Trait Abstractions (`KAI Agent App/kai-core/src/traits/`)**: `LlmProvider` (`OpenAiCompatClient` composition + 8 dedicated provider structs via `ProviderFactory`), `AgentTool` (`ToolRegistry::for_mode` with workspace/mode gating), `HostServices` (`TauriHostServices`), and `SessionStorage` (`FileSessionStorage`).
+- **Rust Tools & Engine (`KAI Agent App/kai-core/src/tools/`, `KAI Agent App/kai-core/src/engine/`)**: `WorkspacePathGuard`, `FetchUrlTool` (SSRF IP/DNS blocklist, max 3 redirects, 1 MB cap), `RunCommandTool` (user approval via `HostServices`), `CalculateTool` (recursive-descent parser), `ConfigManager` (`keyring` OS credential vault), `SessionStore`, `TurnSnapshotManager`, and `AgentExecutor`.
+- **Renderer Bridge (`WebviewIPCBridge.js`)**: Detects `window.__TAURI__` (`_isTauri`) and routes messages via `kai_post_message` / `kai://ipc` events alongside Electron, VS Code, and Browser Preview.

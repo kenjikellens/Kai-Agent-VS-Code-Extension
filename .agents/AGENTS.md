@@ -6,13 +6,13 @@ This file defines the project-level context, architectural mandates, build workf
 
 ## 1. Project Ecosystem & Structure
 
-This repository contains two core implementations of the KAI Agent ecosystem:
-1. **`Kai-Agent-extension/`**: VS Code & Antigravity IDE Extension.
+This repository contains two independent implementations of the KAI Agent ecosystem (they do **NOT** need to be identical in language, architecture, or file structure):
+1. **`Kai-Agent-extension/`**: VS Code & Antigravity IDE Extension (**stays in TypeScript / JavaScript**).
    - Backend / Host: `Kai-Agent-extension/code/src/` (TypeScript).
    - Frontend / Webview: `Kai-Agent-extension/code/media/` (HTML, CSS, JS).
-2. **`KAI Agent App/`**: Standalone Desktop Application.
-   - Core / Renderer: `KAI Agent App/src/` (TypeScript, Electron Main & Preload).
-   - Python Local Preview Server: `KAI Agent App/run_pc.py`.
+2. **`KAI Agent App/`**: Standalone Desktop Application (migrating backend to **Rust + Tauri** while retaining `src/renderer/` UI).
+   - Rust Core & Tauri Shell: `KAI Agent App/kai-core/` and `KAI Agent App/src-tauri/` (Rust OOP traits & structs).
+   - Legacy Electron / Preview Shell: `KAI Agent App/src/` (TypeScript/JS) and `KAI Agent App/run_pc.py`.
 3. **`docs/`**: Shared documentation and reference configurations (`model_reference.json`).
 
 ---
@@ -33,10 +33,10 @@ This repository contains two core implementations of the KAI Agent ecosystem:
 
 - **Dedicated Class Files**: Never bundle multiple distinct API providers, tools, or major UI modules into a single monolithic class or file.
 - **Provider Pattern**:
-  - Every LLM provider (e.g., `LMStudioClient`, `GeminiClient`, `MistralClient`, `CohereClient`, `CerebrasClient`, `ZhipuClient`, `OmniRouteClient`, `OpenRouterClient`) must have its own dedicated class file in `src/providers/`.
-  - All providers must implement `ILLMProvider` or extend `BaseCloudProviderClient`.
-- **Tool Parity**:
-  - Keep tool contracts consistent across both the Extension and the Desktop App (`read_file`, `write_file`, `replace_file_content`, `multi_replace_file_content`, `delete_item`, `list_dir`, `grep_search`, `symbol_search`, `get_diagnostics`, `run_command`, `web_search`, `fetch_url`).
+  - Every LLM provider (e.g., LM Studio, Gemini, Mistral, Cohere, Cerebras, Zhipu, OmniRoute, OpenRouter) must have its own dedicated file (`src/providers/` in TypeScript or `KAI Agent App/kai-core/src/providers/` in Rust).
+  - All providers must implement the provider abstraction (`ILLMProvider` in TypeScript; `LlmProvider` trait in Rust).
+- **Independent Codebases (No Identical-Code Mandate)**:
+  - `KAI Agent App` and `Kai-Agent-extension` do **NOT** need to be identical or maintain 1-to-1 code, file, or feature parity. Each codebase uses the architecture and language best suited to its runtime (TypeScript/Node.js for the VS Code Extension; Rust/Tauri for the Desktop App).
 - **Prompt Management**:
   - Operational modes (`agent`, `ask`, `planning`, `chat`) and their behavior contracts must align with the prompt definitions in `system_prompt_*.md`.
 
@@ -170,8 +170,8 @@ When implementing or modifying completions across providers, dynamically apply t
 - **Zero English Leftovers in Non-English Locales**:
   - Whenever new UI strings, setting descriptions (`*Desc`), buttons, or placeholders are added or modified, they **MUST** be translated across ALL 18 supported languages in `AllLocales.js`.
   - Never leave English strings as lazy fallbacks in non-English locale blocks (e.g. Dutch, German, French, Spanish, Japanese, Chinese, etc.).
-- **Both Projects Synchronized**:
-  - `AllLocales.js` in `KAI Agent App/src/renderer/media/js/` and `Kai-Agent-extension/code/media/js/` must always be identical and 100% in sync.
+- **Independent Project Locales**:
+  - `AllLocales.js` in `KAI Agent App/src/renderer/media/js/` and `Kai-Agent-extension/code/media/js/` do **NOT** need to be identical; each project only needs to maintain the keys relevant to its own UI, translated across all 18 supported languages.
 - **Batch Updates via Scratch Script**:
   - Per global agent rules, always update all locale dictionaries programmatically using a single batch script in `scratch/` and verify that all 18 locales contain every key.
 
@@ -321,3 +321,11 @@ When implementing or modifying completions across providers, dynamically apply t
 - **XSS, SSRF & Secret Storage Controls**:
   - `MarkdownFormatter.escapeHtml()` escapes `&`, `<`, `>`, `"`, and `'`; `MermaidRenderer.js` runs with `securityLevel: 'strict'` and SVG sanitization; `index.html` enforces a strict `script-src 'self'` CSP; Electron `BrowserWindow` enables `sandbox: true` and navigation guards.
   - `fetch_url.ts` enforces DNS/IP SSRF blocking (loopback, private, link-local), max 3 redirects, and 1 MB stream caps; `GeminiClient.ts` transmits keys via `x-goog-api-key` headers; `ConfigManager.ts` encrypts API keys via Electron `safeStorage` when available with `0o600` file mode.
+
+---
+
+## 26. Rust & Tauri OOP Desktop Backend (`KAI Agent App/kai-core` & `src-tauri`)
+
+- **Core Crate (`KAI Agent App/kai-core/`)**: Implements OOP trait contracts (`LlmProvider`, `AgentTool`, `HostServices`, `SessionStorage`), composition-based providers (`OpenAiCompatClient`, `GeminiClient`, `ProviderFactory`), security-hardened tools (`WorkspacePathGuard`, `FetchUrlTool`, `RunCommandTool`, `CalculateTool`, `ToolRegistry::for_mode`), and engine modules (`ConfigManager` with `keyring`, `SessionStore`, `TurnSnapshotManager`, `AgentExecutor`).
+- **Tauri Shell (`KAI Agent App/src-tauri/`)**: Hosts `../src/renderer` via Tauri v2 (`tauri.conf.json`), exposes `kai_post_message` / `kai_resolve_prompt_response` / native folder pickers (`commands.rs`), and bridges `HostServices` + `ExecutorEventSink` via `TauriHostServices` (`host_adapter.rs`).
+- **Renderer Compatibility (`WebviewIPCBridge.js`)**: Supports `_isTauri` (`window.__TAURI__`) alongside `_isElectron`, `vscode`, and `BrowserPreviewEngine`.
